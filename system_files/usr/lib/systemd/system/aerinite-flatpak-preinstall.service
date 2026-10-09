@@ -1,0 +1,15 @@
+# Nothing in base-main runs flatpak preinstall, so do it at boot once the
+# network is up, retrying until it succeeds.
+[Unit]
+Description=Install the Flatpaks Aerinite ships by default
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/flatpak preinstall --system -y --noninteractive
+Restart=on-failure
+RestartSec=5min
+
+[Install]
+WantedBy=multi-user.target

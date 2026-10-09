@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="406" height="767" viewBox="0 0 406 767">
+  <title>aerinite installer sidebar background</title>
+  <!-- Opaque. The bottom rows are exactly #0d1117 so the CSS background-color
+       (#0d1117) continues seamlessly below the image on tall windows. -->
+  <defs>
+    <linearGradient id="base" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1c222b"/>
+      <stop offset="0.6" stop-color="#11161d"/>
+      <stop offset="0.85" stop-color="#0d1117"/>
+      <stop offset="1" stop-color="#0d1117"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse"
+                    gradientTransform="translate(60 -40) scale(380 420)">
+      <stop offset="0" stop-color="#007bd8" stop-opacity="0.30"/>
+      <stop offset="0.45" stop-color="#007bd8" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#007bd8" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="406" height="767" fill="url(#base)"/>
+  <rect width="406" height="767" fill="url(#glow)"/>
+</svg>

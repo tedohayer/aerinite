@@ -1,0 +1,9 @@
+# Default Flatpaks. flatpak preinstall installs what's declared here and also
+# removes apps an earlier OS preinstalled that aren't listed. Uninstalling one
+# of these opts out. Run at boot by aerinite-flatpak-preinstall.service.
+
+[Flatpak Preinstall org.mozilla.firefox]
+Branch=stable
+
+[Flatpak Preinstall io.github.kolunmi.Bazaar]
+Branch=stable

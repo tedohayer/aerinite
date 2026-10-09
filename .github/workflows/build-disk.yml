@@ -1,0 +1,97 @@
+---
+name: Build disk images
+
+# Manual only: builds the Aerinite installer ISO (image-builder bootc-generic-iso,
+# with installer/Containerfile as the installer environment and the published
+# image embedded as the payload) and a qcow2 VM image, and attaches them to the run.
+on:
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: ${{ github.event.repository.name }} # output of build.yml, keep in sync
+  IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"  # do not edit
+  DEFAULT_TAG: "latest"
+  IMAGE_BUILDER: "ghcr.io/osbuild/image-builder-cli:latest"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build disk images
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        disk-type: ["iso", "qcow2"]
+    permissions:
+      contents: read
+      packages: read
+
+    steps:
+      - name: Prepare environment
+        run: |
+          echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}" >> ${GITHUB_ENV}
+          echo "IMAGE_NAME=${IMAGE_NAME,,}" >> ${GITHUB_ENV}
+
+      - name: Maximize build space
+        uses: ublue-os/remove-unwanted-software@cc0becac701cf642c8f0a6613bbdaf5dc36b259e # v9
+        with:
+          remove-codeql: true
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # image-builder reads images from root's container storage
+      - name: Pull the Aerinite image
+        id: payload
+        run: |
+          IMAGE="${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}"
+          sudo podman pull "${IMAGE}"
+          VERSION=$(sudo podman image inspect "${IMAGE}" --format '{{index .Labels "org.opencontainers.image.version"}}')
+          echo "Payload ${IMAGE} version ${VERSION}"
+          echo "image=${IMAGE}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "fedora_major=${VERSION%%.*}" >> "$GITHUB_OUTPUT"
+
+      - name: Build the installer environment
+        if: matrix.disk-type == 'iso'
+        run: |
+          sudo podman build --pull=newer \
+            --build-arg FEDORA_MAJOR="${{ steps.payload.outputs.fedora_major }}" \
+            -f installer/Containerfile -t localhost/aerinite-installer:latest .
+
+      - name: Build disk image
+        run: |
+          mkdir -p output
+          if [ "${{ matrix.disk-type }}" = iso ]; then
+            ARGS=(--bootc-ref localhost/aerinite-installer:latest
+                  --bootc-installer-payload-ref "${{ steps.payload.outputs.image }}"
+                  --bootc-default-fs ext4
+                  bootc-generic-iso)
+          else
+            # filesystem layout comes from the image's bootc install config
+            ARGS=(--bootc-ref "${{ steps.payload.outputs.image }}"
+                  qcow2)
+          fi
+          sudo podman run --rm --privileged --pull=newer \
+            --security-opt label=type:unconfined_t \
+            -v ./output:/output \
+            -v /var/lib/containers/storage:/var/lib/containers/storage \
+            "${IMAGE_BUILDER}" \
+            build --output-dir /output "${ARGS[@]}"
+          sudo chown -R "$(id -u):$(id -g)" output
+          # image-builder names files after the installer base (bootc-fedora-…)
+          for f in $(find output -type f \( -name '*.iso' -o -name '*.qcow2' \)); do
+            mv "$f" "$(dirname "$f")/${IMAGE_NAME}-${{ steps.payload.outputs.version }}.${f##*.}"
+          done
+          find output -type f -exec ls -lh {} \;
+
+      - name: Upload disk image
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ env.IMAGE_NAME }}-${{ matrix.disk-type }}-${{ steps.payload.outputs.version }}
+          path: output
+          if-no-files-found: error
+          compression-level: 0

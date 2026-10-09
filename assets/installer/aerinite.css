@@ -1,0 +1,37 @@
+/* Anaconda GTK style overrides for aerinite.
+ * Drop-in replacement for fedora-logos' /usr/share/anaconda/pixmaps/fedora.css
+ * (the custom_stylesheet of the "fedora" Anaconda profile). The background
+ * colours must match the PNGs: the sidebar image is opaque and ends in #0d1117,
+ * so the colour continues seamlessly on windows taller than 767px.
+ */
+@define-color aerinite_sidebar #0d1117;
+@define-color aerinite_topbar #161b22;
+
+.logo-sidebar {
+    background-image: url('/usr/share/anaconda/pixmaps/sidebar-bg.png');
+    background-color: @aerinite_sidebar;
+    background-repeat: no-repeat;
+}
+
+.logo {
+    background-image: url('/usr/share/anaconda/pixmaps/sidebar-logo.png');
+    background-position: 50% 20px;
+    background-repeat: no-repeat;
+    background-color: transparent;
+}
+
+.product-logo {
+    background-image: none;
+    background-color: transparent;
+}
+
+AnacondaSpokeWindow #nav-box {
+    background-color: @aerinite_topbar;
+    background-image: url('/usr/share/anaconda/pixmaps/topbar-bg.png');
+    background-repeat: repeat-x;
+    color: white;
+}
+
+AnacondaSpokeWindow #nav-box GtkButton {
+    box-shadow: none;
+}

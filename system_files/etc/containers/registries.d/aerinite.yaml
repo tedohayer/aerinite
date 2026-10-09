@@ -1,0 +1,4 @@
+# Fetch Aerinite's cosign signatures from the registry (see policy.json).
+docker:
+  ghcr.io/tedohayer/aerinite:
+    use-sigstore-attachments: true

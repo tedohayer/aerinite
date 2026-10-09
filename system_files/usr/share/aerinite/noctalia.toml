@@ -1,0 +1,35 @@
+# Noctalia defaults shipped by Aerinite, installed as /usr/share/aerinite/noctalia.toml
+# and linked into ~/.config/noctalia/00-image.toml at login; anything in
+# ~/.config/noctalia/config.toml overrides these.
+
+[shell]
+# 12-hour clock with AM/PM
+time_format = "{:%I:%M %p}"
+# Show password prompts for system actions (no other polkit agent runs under niri)
+polkit_agent = true
+
+[calendar]
+event_time_format = "%I:%M %p"
+
+# Lock after 5 min, turn the screen off after 10 min
+[idle.behavior.lock]
+enabled = true
+timeout = 300.0
+
+[idle.behavior.screen-off]
+enabled = true
+timeout = 600.0
+
+# Square bar: no rounded corners, no curved corners hanging below it
+[bar.default]
+radius = 0
+radius_top_left = 0
+radius_top_right = 0
+radius_bottom_left = 0
+radius_bottom_right = 0
+concave_edge_corners = false
+
+# Bar clock: the widget has its own format (defaults to 24h), separate from shell.time_format
+[widget.clock]
+type = "clock"
+format = "{:%I:%M %p}"

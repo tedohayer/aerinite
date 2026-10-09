@@ -1,0 +1,8 @@
+# GTK defaults: close button only (niri has no minimise; maximise is Mod+F)
+# and dark style. Users can still change these with gsettings.
+
+[org.gnome.desktop.wm.preferences]
+button-layout=':close'
+
+[org.gnome.desktop.interface]
+color-scheme='prefer-dark'

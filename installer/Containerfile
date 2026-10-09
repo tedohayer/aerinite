@@ -1,0 +1,81 @@
+# Aerinite installer environment for image-builder's bootc-generic-iso.
+# Based on osbuild's documented Fedora example:
+# https://github.com/osbuild/image-builder/blob/main/doc/20-advanced/20-bootc/10-isos.md
+# Build from the repo root:  podman build -f installer/Containerfile .
+ARG FEDORA_MAJOR=44
+FROM quay.io/fedora/fedora-bootc:${FEDORA_MAJOR}
+
+RUN dnf install -qy \
+        anaconda \
+        anaconda-install-img-deps \
+        anaconda-dracut \
+        dracut-config-generic \
+        dracut-network \
+        net-tools \
+        grub2-efi-x64-cdboot \
+        plymouth \
+        plymouth-plugin-two-step \
+        plymouth-theme-spinner \
+        default-fonts-core-sans \
+        default-fonts-other-sans \
+        google-noto-sans-cjk-fonts \
+        xorriso \
+        squashfs-tools \
+    && dnf clean all
+
+RUN mkdir -p /boot/efi && cp -ra /usr/lib/efi/*/*/EFI /boot/efi
+
+# ISO label and boot menu, read by image-builder
+COPY installer/iso.yaml /usr/lib/image-builder/bootc/iso.yaml
+
+# Install the Aerinite image (embedded in the ISO), then point updates at the
+# signed registry image
+COPY installer/interactive-defaults.ks /usr/share/anaconda/interactive-defaults.ks
+
+# Branding: installer name from os-release (ID stays fedora so Anaconda's
+# Fedora profile still applies) and the Aerinite artwork in place of
+# fedora-logos' (fedora.css is the profile's stylesheet)
+RUN sed -i \
+        -e 's|^NAME=.*|NAME="Aerinite"|' \
+        -e 's|^PRETTY_NAME=.*|PRETTY_NAME="Aerinite Installer"|' \
+        -e 's|^VARIANT_ID=.*|VARIANT_ID=aerinite-installer|' \
+        /usr/lib/os-release
+COPY assets/installer/sidebar-bg.png assets/installer/sidebar-logo.png \
+     assets/installer/topbar-bg.png assets/installer/anaconda_header.png \
+     /usr/share/anaconda/pixmaps/
+COPY assets/installer/aerinite.css /usr/share/anaconda/pixmaps/fedora.css
+
+# Product name, version and release status for Anaconda's header, welcome
+# screen and pre-release warning (lorax normally writes this file;
+# without it Anaconda shows "ANACONDA bluesky ... PRE-RELEASE / TESTING")
+ARG FEDORA_MAJOR
+RUN printf '[Main]\nProduct=Aerinite\nVersion=%s\nBugURL=https://github.com/tedohayer/aerinite/issues\nIsFinal=True\nUUID=aerinite-installer\n' \
+        "${FEDORA_MAJOR}" > /.buildstamp && cat /.buildstamp
+
+# Same boot splash as the installed system
+COPY system_files/usr/share/plymouth/themes/aerinite/ /usr/share/plymouth/themes/aerinite/
+COPY system_files/etc/plymouth/plymouthd.conf /etc/plymouth/plymouthd.conf
+RUN cp --update=none /usr/share/plymouth/themes/spinner/*.png /usr/share/plymouth/themes/aerinite/
+
+# What lorax normally does to make anaconda run (from the osbuild example)
+RUN echo "install:x:0:0:root:/root:/usr/libexec/anaconda/run-anaconda" >> /etc/passwd && \
+    echo "install::14438:0:99999:7:::" >> /etc/shadow && \
+    passwd -d root
+RUN mv /usr/share/anaconda/list-harddrives-stub /usr/bin/list-harddrives && \
+    mv /etc/yum.repos.d /etc/anaconda.repos.d && \
+    ln -s /lib/systemd/system/anaconda.target /etc/systemd/system/default.target && \
+    rm -v /usr/lib/systemd/system-generators/systemd-gpt-auto-generator
+# Fedora 44 already ships autovt@.service (an alias of getty@), so replace it
+RUN ln -sf /usr/lib/systemd/system/anaconda-shell@.service /usr/lib/systemd/system/autovt@.service
+RUN mkdir -p /usr/lib/systemd/logind.conf.d && \
+    printf '[Login]\nReserveVT=2\n' > /usr/lib/systemd/logind.conf.d/anaconda-shell.conf
+RUN mkdir -p /etc/systemd/user/pipewire.service.d /etc/systemd/user/pipewire.socket.d && \
+    printf '[Unit]\nConditionUser=\n' > /etc/systemd/user/pipewire.service.d/allowroot.conf && \
+    printf '[Unit]\nConditionUser=\n' > /etc/systemd/user/pipewire.socket.d/allowroot.conf
+
+# Installer initramfs with anaconda (and the splash theme)
+RUN mkdir -p "$(realpath /root)" && \
+    kernel=$(kernel-install list --json pretty | jq -r '.[] | select(.has_kernel == true) | .version') && \
+    DRACUT_NO_XATTR=1 dracut --force -v --zstd --reproducible --no-hostonly \
+        --add "anaconda" \
+        "/usr/lib/modules/${kernel}/initramfs.img" "${kernel}"
