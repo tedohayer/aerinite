@@ -4,13 +4,24 @@
 
 A minimal [bootc](https://github.com/bootc-dev/bootc) desktop image: the [niri](https://github.com/YaLTeR/niri) scrollable-tiling compositor with [Noctalia](https://github.com/noctalia-dev/noctalia) as the shell, built on Universal Blue's [`base-main`](https://github.com/ublue-os/main) (Fedora Atomic with no desktop, plus ublue's codecs, kernel, udev rules and `ujust`).
 
+## Status
+
+Aerinite is in alpha and is currently built for my personal use. It's what I run
+day to day, so it's kept working, but there's no stability promise between builds.
+Feel free to use it, fork it, or borrow from it.
+
 ## Philosophy
 
-Aerinite is minimal: [niri](https://github.com/YaLTeR/niri) and [Noctalia](https://github.com/noctalia-dev/noctalia), and little else. It aims to be unopinionated: it ships sensible defaults, everything can be overridden, and it avoids changes that break existing workflows wherever possible.
+Aerinite is minimal: [niri](https://github.com/YaLTeR/niri) and [Noctalia](https://github.com/noctalia-dev/noctalia), and little else.
 
-It isn't a new distro. It's Fedora: Fedora Atomic via Universal Blue's base-main, using the same packages and repositories, with a thin layer of configuration on top.
+niri is a scrollable-tiling compositor. Windows sit in columns on an endless horizontal strip, so opening a new window never squeezes the ones you already have; you scroll to it instead. Noctalia is a complete desktop shell on top of it, covering the bar, notifications, launcher, lock screen, wallpaper and settings.
 
-Like other Universal Blue images, it's built to stay out of your way:
+Aerinite aims to be unopinionated: it ships sensible defaults, everything can be overridden, and it avoids changes that break existing workflows wherever possible. The goal is a stable platform with minimal changes.
+
+This isn't a new distro. It's just Fedora Atomic, where the whole system ships as
+one read-only image. [Universal Blue](https://universal-blue.org) builds on that
+image to add codecs and hardware support. Aerinite is a thin layer on top of
+Universal Blue. Like other Universal Blue images, it stays out of your way:
 
 - **Updates happen in the background.** New images are built automatically and downloaded quietly, then take effect on your next reboot. Each update is a complete, signed image applied in one step. If something goes wrong, the previous version is still in the boot menu.
 - **Apps live in containers.** Desktop apps are Flatpaks from Flathub, and development tools run in Distrobox containers, so the base system stays small and untouched.
