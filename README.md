@@ -109,3 +109,7 @@ just build-iso      # installer ISO
 ```
 
 `just --list` shows everything else.
+
+## Credits
+
+Based on [fedora-atomic-niri](https://github.com/rgerardi/fedora-atomic-niri) and [ublue-os/image-template](https://github.com/ublue-os/image-template).
