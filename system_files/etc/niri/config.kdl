@@ -1,5 +1,5 @@
 // Aerinite system niri config, installed to /etc/niri/config.kdl.
-// niri uses it when ~/.config/niri/config.kdl does not exist. To customise,
+// niri uses it when ~/.config/niri/config.kdl does not exist. To customize,
 // create that file with:
 //     include "/etc/niri/config.kdl"
 // followed by your own overrides.
