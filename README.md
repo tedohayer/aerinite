@@ -4,6 +4,8 @@
 
 A minimal [bootc](https://github.com/bootc-dev/bootc) desktop image: the [niri](https://github.com/YaLTeR/niri) scrollable-tiling compositor with [Noctalia](https://github.com/noctalia-dev/noctalia) as the shell, built on Universal Blue's [`base-main`](https://github.com/ublue-os/main) (Fedora Atomic with no desktop, plus ublue's codecs, kernel, udev rules and `ujust`).
 
+![Aerinite: niri with the Noctalia bar, Alacritty running fastfetch, and Godot](assets/screenshot.png)
+
 ## Status
 
 Aerinite is in alpha and is currently built for my personal use. It's what I run
@@ -25,10 +27,6 @@ Universal Blue. Like other Universal Blue images, it stays out of your way:
 
 - **Updates happen in the background.** New images are built automatically and downloaded quietly, then take effect on your next reboot. Each update is a complete, signed image applied in one step. If something goes wrong, the previous version is still in the boot menu.
 - **Apps live in containers.** Desktop apps are Flatpaks from Flathub, and development tools run in Distrobox containers, so the base system stays small and untouched.
-
-## Screenshot
-
-![Aerinite: niri with the Noctalia bar, Alacritty running fastfetch, and Godot](assets/screenshot.png)
 
 ## What you get
 
