@@ -96,6 +96,16 @@ cp -avf /ctx/system_files/. /
 /usr/share/noctalia-greeter/setup_greetd_pam.sh
 rm -f /etc/pam.d/greetd.bak.noctalia.*
 
+# Log in with a password, not a fingerprint: the login password is what
+# unlocks the keyring, and without it the keyring is stored unencrypted.
+# password-auth is system-auth without pam_fprintd (what GDM uses), so
+# fingerprint stays available for sudo and the lock screen.
+sed -i 's/\bsystem-auth\b/password-auth/' /etc/pam.d/greetd
+if grep -q -e system-auth -e pam_fprintd /etc/pam.d/greetd; then
+	echo "greetd PAM still reaches pam_fprintd" >&2
+	exit 1
+fi
+
 # Fingerprint auth for login, lock screen and sudo. Installing fprintd-pam
 # doesn't enable it; authselect has to add pam_fprintd to the PAM stacks.
 authselect enable-feature with-fingerprint
