@@ -9,6 +9,7 @@ on:
   push:
     branches:
       - main
+      - beta
     paths-ignore:
       - '**/README.md'
       - 'AGENTS.md'
@@ -19,7 +20,11 @@ env:
   IMAGE_DESC: "aerinite: a minimal niri + Noctalia desktop on Universal Blue base-main"
   IMAGE_NAME: "${{ github.event.repository.name || 'aerinite' }}"  # output image name, usually same as repo name
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"  # do not edit
-  DEFAULT_TAG: "latest"
+  # The beta branch publishes to its own channel: tag "beta" and beta-* build
+  # tags, prerelease releases, and never touches latest or the Fedora major tag.
+  CHANNEL: ${{ github.ref_name == 'beta' && 'beta' || 'stable' }}
+  DEFAULT_TAG: ${{ github.ref_name == 'beta' && 'beta' || 'latest' }}
+  TAG_PREFIX: ${{ github.ref_name == 'beta' && 'beta-' || '' }}
   # Signing is skipped until a SIGNING_SECRET repository secret is added
   HAS_SIGNING_KEY: ${{ secrets.SIGNING_SECRET != '' }}
 
@@ -39,6 +44,7 @@ jobs:
       base_digest: ${{ steps.base.outputs.digest }}
       base_kernel: ${{ steps.base.outputs.kernel }}
       base_version: ${{ steps.base.outputs.version }}
+      base_missing: ${{ steps.base.outputs.missing }}
       fedora_major: ${{ steps.base.outputs.fedora_major }}
       should_build: ${{ steps.compare.outputs.should_build }}
     steps:
@@ -52,7 +58,15 @@ jobs:
         run: |
           BASE_IMAGE=$(sed -n 's/^ARG BASE_IMAGE=//p' Containerfile)
           [ -n "${BASE_IMAGE}" ] || { echo "BASE_IMAGE not found in Containerfile"; exit 1; }
-          skopeo inspect "docker://${BASE_IMAGE}" > base.json
+          if ! skopeo inspect "docker://${BASE_IMAGE}" > base.json; then
+            # Beta may target a base that isn't published yet: skip, don't fail
+            if [ "${CHANNEL}" = beta ]; then
+              echo "::notice::${BASE_IMAGE} is not published yet; skipping the beta build"
+              echo "missing=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "Could not inspect ${BASE_IMAGE}"; exit 1
+          fi
           DIGEST=$(jq -r '.Digest' base.json)
           KERNEL=$(jq -r '.Labels["ostree.linux"] // ""' base.json)
           VERSION=$(jq -r '.Labels["org.opencontainers.image.version"] // ""' base.json)
@@ -73,6 +87,11 @@ jobs:
       - name: Compare with last built image
         id: compare
         run: |
+          if [ "${{ steps.base.outputs.missing }}" = true ]; then
+            echo "should_build=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           if [ "${{ github.event_name }}" != "schedule" ]; then
             echo "Event is ${{ github.event_name }}, building"
             echo "should_build=true" >> "$GITHUB_OUTPUT"
@@ -90,7 +109,7 @@ jobs:
           # Rebuild whenever base-main changed at all (not just its kernel), by
           # comparing its digest with the base digest recorded on our latest.
           REPO_NAME="${IMAGE_NAME:-${GITHUB_REPOSITORY#*/}}"
-          IMAGE_REF="docker://ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/${REPO_NAME,,}:latest"
+          IMAGE_REF="docker://ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/${REPO_NAME,,}:${DEFAULT_TAG}"
 
           PREV_BASE=$(skopeo inspect --creds "${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}" "${IMAGE_REF}" \
             --format '{{index .Labels "org.opencontainers.image.base.digest"}}' || echo "")
@@ -141,6 +160,7 @@ jobs:
 
       # Universal Blue style versions: tag 44-20261008, then 44-20261008.1, .2…
       # for later builds that day; the version label uses dots (44.20261008.1).
+      # Beta build tags carry a prefix (beta-45-20261010) so they never collide.
       - name: Compute version
         id: version
         env:
@@ -149,14 +169,14 @@ jobs:
           DATE=$(date -u +%Y%m%d)
           EXISTING=$(skopeo list-tags --creds "${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}" \
             "docker://${IMAGE_REGISTRY}/${IMAGE_NAME}" 2>/dev/null \
-            | jq -r '.Tags[]' | grep -E "^${MAJOR}-${DATE}(\.[0-9]+)?$" || true)
+            | jq -r '.Tags[]' | grep -E "^${TAG_PREFIX}${MAJOR}-${DATE}(\.[0-9]+)?$" || true)
           if [ -z "${EXISTING}" ]; then
-            TAG="${MAJOR}-${DATE}"
+            TAG="${TAG_PREFIX}${MAJOR}-${DATE}"
             VERSION="${MAJOR}.${DATE}"
           else
-            LAST=$(sed -E "s/^${MAJOR}-${DATE}\.?//; s/^$/0/" <<< "${EXISTING}" | sort -n | tail -1)
+            LAST=$(sed -E "s/^${TAG_PREFIX}${MAJOR}-${DATE}\.?//; s/^$/0/" <<< "${EXISTING}" | sort -n | tail -1)
             N=$((LAST + 1))
-            TAG="${MAJOR}-${DATE}.${N}"
+            TAG="${TAG_PREFIX}${MAJOR}-${DATE}.${N}"
             VERSION="${MAJOR}.${DATE}.${N}"
           fi
           echo "Version ${VERSION} (tag ${TAG})"
@@ -285,10 +305,12 @@ jobs:
           done
           DIGEST="$(< /tmp/digestfile)"
           [ -n "${DIGEST}" ] || { echo "push wrote no digest"; exit 1; }
-          for alias in "${DEFAULT_TAG}" "${MAJOR}"; do
+          ALIASES=("${DEFAULT_TAG}")
+          [ "${CHANNEL}" = stable ] && ALIASES+=("${MAJOR}")
+          for alias in "${ALIASES[@]}"; do
             skopeo copy "docker://${IMAGE}@${DIGEST}" "docker://${IMAGE}:${alias}"
           done
-          echo "Pushed ${IMAGE}:{${TAG},${DEFAULT_TAG},${MAJOR}} @ ${DIGEST}"
+          echo "Pushed ${IMAGE}:${TAG} and ${ALIASES[*]} @ ${DIGEST}"
           echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
 
       - name: Install Cosign
@@ -320,7 +342,14 @@ jobs:
           BASE_DIGEST: ${{ needs.check-base.outputs.base_digest }}
           BASE_KERNEL: ${{ needs.check-base.outputs.base_kernel }}
         run: |
-          PREV=$(git describe --tags --abbrev=0 HEAD 2>/dev/null || true)
+          # Previous release in the same channel
+          if [ "${CHANNEL}" = beta ]; then
+            PREV=$(git describe --tags --abbrev=0 --match 'beta-*' HEAD 2>/dev/null || true)
+            RELEASE_ARGS=(--prerelease --latest=false)
+          else
+            PREV=$(git describe --tags --abbrev=0 --exclude 'beta-*' HEAD 2>/dev/null || true)
+            RELEASE_ARGS=()
+          fi
           {
             echo "## Changes"
             echo
@@ -347,4 +376,4 @@ jobs:
             echo "\`ghcr.io/${{ github.repository_owner }}/${IMAGE_NAME}:${TAG}\`"
           } > notes.md
           cat notes.md
-          gh release create "${TAG}" --target "${GITHUB_SHA}" --title "${VERSION}" --notes-file notes.md
+          gh release create "${TAG}" --target "${GITHUB_SHA}" --title "${VERSION}" --notes-file notes.md "${RELEASE_ARGS[@]}"
