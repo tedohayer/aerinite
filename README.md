@@ -44,18 +44,20 @@ Codecs come from base-main (negativo17 fedora-multimedia). The rpm Firefox and n
 
 ### From an existing Fedora Atomic or Universal Blue system
 
-```bash
-sudo bootc switch --enforce-container-sigpolicy ghcr.io/tedohayer/aerinite:latest
-sudo reboot
-```
-
-Any Fedora Atomic desktop or Universal Blue image works as a starting point. If your current system doesn't trust Aerinite's signing key yet, the first switch has to skip verification:
+Any Fedora Atomic desktop or Universal Blue image works as a starting point. Your current system doesn't have Aerinite's signing key yet, so the first switch can't verify the image:
 
 ```bash
 sudo bootc switch ghcr.io/tedohayer/aerinite:latest
+sudo reboot
 ```
 
-After rebooting into Aerinite the key is installed, and you can re-run the first command so future updates are verified.
+Aerinite includes its key. Once you've booted into it, switch again with verification on:
+
+```bash
+sudo bootc switch --enforce-container-sigpolicy ghcr.io/tedohayer/aerinite:latest
+```
+
+From then on, every update is checked against the key before it's installed. Your system will only accept images built and signed by Aerinite's own build pipeline, so a tampered or substituted image is refused.
 
 ### Installer ISO
 
@@ -74,10 +76,19 @@ Versions follow Universal Blue's scheme. Each build gets:
 | `latest` | | Newest build; what installs follow by default |
 | Fedora major | `44` | Newest build on that Fedora release; pin to it to choose when to move to the next one |
 | Build | `44-20261008`, `44-20261008.1` | One specific build: Fedora major, UTC date, and a counter for later builds that day. Never overwritten |
+| `beta` | | Newest build from the `beta` branch |
+| Beta build | `beta-45-20261010` | One specific beta build |
 
 The image's `org.opencontainers.image.version` label holds the dotted form (`44.20261008.1`). Every build also gets a [GitHub release](https://github.com/tedohayer/aerinite/releases) with the commits since the previous build and the base image it was built on.
 
 The Fedora release comes from `BASE_IMAGE` in the `Containerfile`; moving to the next one is a one-line change there.
+
+The beta channel is for testing larger changes before they reach `latest`, like the move to a new version of Fedora, and may break. Beta builds are published as prereleases. To try it, and to go back:
+
+```bash
+sudo bootc switch --enforce-container-sigpolicy ghcr.io/tedohayer/aerinite:beta
+sudo bootc switch --enforce-container-sigpolicy ghcr.io/tedohayer/aerinite:latest
+```
 
 ## Configuration
 
