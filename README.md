@@ -31,11 +31,11 @@ Universal Blue. Like other Universal Blue images, it stays out of your way:
 ## What you get
 
 - **Desktop**: niri + Noctalia (bar, notifications, launcher, lock screen, idle, wallpaper, polkit agent), Alacritty, imv
-- **Login**: [Noctalia Greeter](https://github.com/noctalia-dev/noctalia-greeter) on greetd, with the niri session preselected, a 12h clock and fingerprint login (press Enter with an empty password, then touch the sensor)
+- **Login**: [Noctalia Greeter](https://github.com/noctalia-dev/noctalia-greeter)
 - **Shell**: zsh with autosuggestions and syntax highlighting
 - **Containers & VMs**: podman (+ compose, machine, tui) and the virtualization group; distrobox comes with base-main
 - **Flatpaks**: Firefox and the [Bazaar](https://github.com/kolunmi/bazaar) app store from Flathub, installed on first boot via `flatpak preinstall` (uninstalling one opts out). Like any preinstall list, this also removes apps that a previous OS preinstalled and Aerinite doesn't list; apps you installed yourself are left alone
-- **Hardware**: fprintd with fingerprint auth enabled in PAM, brightnessctl, playerctl, power-profiles-daemon
+- **Hardware**: fprintd with fingerprint auth for sudo and the lock screen, brightnessctl, playerctl, power-profiles-daemon
 - **Fonts**: Cascadia, JetBrains Mono, Google Noto
 
 Codecs come from base-main (negativo17 fedora-multimedia). The rpm Firefox and niri's recommended extras (waybar, swaylock, fuzzel) are not installed.
