@@ -13,9 +13,10 @@ dnf5 -y group install virtualization --with-optional
 dnf5 -y install \
 		alacritty \
 		bluez \
-		gnome-keyring \
-		gnome-keyring-pam \
 		NetworkManager-wifi \
+		oo7-daemon \
+		oo7-portal \
+		pam_oo7 \
 		pipewire \
 		pipewire-pulseaudio \
 		playerctl \
@@ -48,7 +49,7 @@ dnf5 -y install \
 
 dnf5 -y copr enable yalter/niri
 # Skip niri's recommends (waybar, swaylock, fuzzel...): Noctalia replaces them
-# and the parts we need (alacritty, portals, keyring) are installed above.
+# and the parts we need (alacritty, portals, secrets service) are installed above.
 dnf5 -y install --setopt=install_weak_deps=False niri xwayland-satellite
 dnf5 -y copr disable yalter/niri
 
@@ -95,6 +96,23 @@ cp -avf /ctx/system_files/. /
 # initramfs/unpackaged layer on every build, so remove it.
 /usr/share/noctalia-greeter/setup_greetd_pam.sh
 rm -f /etc/pam.d/greetd.bak.noctalia.*
+
+# Fedora 45 replaces GNOME Keyring with oo7. GDM's PAM stack calls pam_oo7, but
+# greetd's still only knows pam_gnome_keyring, so add the same three hooks:
+# pass the login password to oo7, follow password changes, start the daemon.
+if ! grep -q pam_oo7 /etc/pam.d/greetd; then
+	sed -i \
+		-e '/^auth[[:space:]]*include[[:space:]]*postlogin/i -auth       optional    pam_oo7.so' \
+		-e '/^password[[:space:]]*include[[:space:]]*system-auth/a -password   optional    pam_oo7.so use_authtok' \
+		-e '/^session[[:space:]]*include[[:space:]]*postlogin/i -session    optional    pam_oo7.so auto_start' \
+		/etc/pam.d/greetd
+fi
+[ "$(grep -c pam_oo7 /etc/pam.d/greetd)" -eq 3 ]
+# Only one secrets service may own org.freedesktop.secrets
+if rpm -q gnome-keyring; then
+	echo "gnome-keyring is installed alongside oo7" >&2
+	exit 1
+fi
 
 # Fingerprint auth for login, lock screen and sudo. Installing fprintd-pam
 # doesn't enable it; authselect has to add pam_fprintd to the PAM stacks.
