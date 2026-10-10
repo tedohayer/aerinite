@@ -124,7 +124,8 @@ if rpm -q gnome-keyring; then
 	exit 1
 fi
 
-# Fingerprint auth for login, lock screen and sudo. Installing fprintd-pam
+# Fingerprint auth for sudo and polkit prompts (login uses password-auth, above;
+# the lock screen talks to fprintd itself). Installing fprintd-pam
 # doesn't enable it; authselect has to add pam_fprintd to the PAM stacks.
 authselect enable-feature with-fingerprint
 grep -q pam_fprintd /etc/pam.d/system-auth
