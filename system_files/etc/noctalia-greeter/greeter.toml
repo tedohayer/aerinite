@@ -1,11 +1,11 @@
-# Noctalia Greeter defaults: preselect niri, allow an empty password so a
-# fingerprint touch logs in, 12h clock, colors synced from Noctalia.
+# Noctalia Greeter defaults: preselect niri, password login (it unlocks the
+# keyring), 12h clock, colors synced from Noctalia.
 
 [session]
 default = "Niri"
 
 [auth]
-allow_empty_password = true
+allow_empty_password = false
 
 [clock]
 time_format = "{:%I:%M %p}"

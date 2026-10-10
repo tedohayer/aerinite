@@ -97,13 +97,23 @@ cp -avf /ctx/system_files/. /
 /usr/share/noctalia-greeter/setup_greetd_pam.sh
 rm -f /etc/pam.d/greetd.bak.noctalia.*
 
+# Log in with a password, not a fingerprint: the login password is what
+# unlocks the keyring, and without it the keyring is stored unencrypted.
+# password-auth is system-auth without pam_fprintd (what GDM uses), so
+# fingerprint stays available for sudo and the lock screen.
+sed -i 's/\bsystem-auth\b/password-auth/' /etc/pam.d/greetd
+if grep -q -e system-auth -e pam_fprintd /etc/pam.d/greetd; then
+	echo "greetd PAM still reaches pam_fprintd" >&2
+	exit 1
+fi
+
 # Fedora 45 replaces GNOME Keyring with oo7. GDM's PAM stack calls pam_oo7, but
 # greetd's still only knows pam_gnome_keyring, so add the same three hooks:
 # pass the login password to oo7, follow password changes, start the daemon.
 if ! grep -q pam_oo7 /etc/pam.d/greetd; then
 	sed -i \
 		-e '/^auth[[:space:]]*include[[:space:]]*postlogin/i -auth       optional    pam_oo7.so' \
-		-e '/^password[[:space:]]*include[[:space:]]*system-auth/a -password   optional    pam_oo7.so use_authtok' \
+		-e '/^password[[:space:]]*include[[:space:]]*password-auth/a -password   optional    pam_oo7.so use_authtok' \
 		-e '/^session[[:space:]]*include[[:space:]]*postlogin/i -session    optional    pam_oo7.so auto_start' \
 		/etc/pam.d/greetd
 fi
