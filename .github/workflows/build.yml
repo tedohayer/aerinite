@@ -130,6 +130,44 @@ jobs:
             echo "should_build=false" >> "$GITHUB_OUTPUT"
           fi
 
+  # The beta branch never gets scheduled runs of its own (GitHub only schedules
+  # the default branch), so the daily run on main dispatches it once its base
+  # image exists: whenever that base changed, and every Sunday.
+  trigger-beta:
+    name: Trigger beta build
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: write
+      contents: read
+      packages: read
+    steps:
+      - name: Dispatch the beta build if needed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if ! CF=$(gh api -H 'Accept: application/vnd.github.raw' \
+              "repos/${GITHUB_REPOSITORY}/contents/Containerfile?ref=beta" 2>/dev/null); then
+            echo "No beta branch, nothing to do"
+            exit 0
+          fi
+          BASE=$(sed -n 's/^ARG BASE_IMAGE=//p' <<< "${CF}")
+          if ! DIGEST=$(skopeo inspect --format '{{.Digest}}' "docker://${BASE}" 2>/dev/null); then
+            echo "${BASE} is not published yet"
+            exit 0
+          fi
+          IMAGE="docker://ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/${IMAGE_NAME,,}:beta"
+          PREV=$(skopeo inspect --creds "${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}" \
+            --format '{{index .Labels "org.opencontainers.image.base.digest"}}' "${IMAGE}" 2>/dev/null || true)
+          echo "Beta base ${BASE}: ${DIGEST}, last beta built on: ${PREV:-none}"
+          if [ "${DIGEST}" = "${PREV}" ] && [ "$(date -u +%u)" -ne 7 ]; then
+            echo "Beta base unchanged, skipping until Sunday or the next base update"
+            exit 0
+          fi
+          gh workflow run build.yml --repo "${GITHUB_REPOSITORY}" --ref beta
+          echo "Dispatched the beta build"
+
   build_push:
     name: Build and push image
     runs-on: ubuntu-24.04
