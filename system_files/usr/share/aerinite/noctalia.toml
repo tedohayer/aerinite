@@ -14,10 +14,12 @@ event_time_format = "%I:%M %p"
 # Lock after 5 min, turn the screen off after 10 min
 [idle.behavior.lock]
 enabled = true
+action = "lock"
 timeout = 300.0
 
 [idle.behavior.screen-off]
 enabled = true
+action = "screen_off"
 timeout = 600.0
 
 # Square bar: no rounded corners, no curved corners hanging below it
