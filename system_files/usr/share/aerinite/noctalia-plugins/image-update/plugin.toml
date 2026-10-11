@@ -1,0 +1,31 @@
+id = "tedohayer/image-update"
+name = "Image Update"
+version = "0.1.0"
+plugin_api = 26
+author = "tedohayer"
+license = "MIT"
+dependencies = ["rpm-ostree", "jq"]
+tags = ["system", "bar"]
+icon = "traffic-lights"
+description = "Traffic light for bootc/rpm-ostree systems: green when the booted image is current, yellow when a newer image is staged for the next reboot, red when one is staged and the booted image is getting old."
+
+[[widget]]
+id = "status"
+entry = "widget.luau"
+
+  [[widget.setting]]
+  key = "max_age_days"
+  type = "int"
+  label_key = "settings.max_age_days.label"
+  description_key = "settings.max_age_days.description"
+  default = 28
+  min = 1
+  max = 365
+
+  [[widget.setting]]
+  key = "interval_minutes"
+  type = "int"
+  label_key = "settings.interval_minutes.label"
+  default = 5
+  min = 1
+  max = 120

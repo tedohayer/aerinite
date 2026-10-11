@@ -1,0 +1,11 @@
+{
+  "settings": {
+    "max_age_days": {
+      "label": "Red after (days)",
+      "description": "Turn red when an update is staged and the booted image is older than this."
+    },
+    "interval_minutes": {
+      "label": "Check every (minutes)"
+    }
+  }
+}

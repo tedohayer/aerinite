@@ -28,8 +28,50 @@ radius_top_right = 0
 radius_bottom_left = 0
 radius_bottom_right = 0
 concave_edge_corners = false
+# Noctalia's default layout with the update light added after the tray (arrays
+# replace, they don't merge, so the whole list is repeated)
+end = [
+    "media",
+    "tray",
+    "image_update",
+    "notifications",
+    "clipboard",
+    "network",
+    "bluetooth",
+    "volume",
+    "brightness",
+    "battery",
+    "control-center",
+    "session"
+]
 
 # Bar clock: the widget has its own format (defaults to 24h), separate from shell.time_format
 [widget.clock]
 type = "clock"
 format = "{:%I:%M %p}"
+
+# Update light in the bar: green = booted image is current, yellow = an update is
+# staged (reboot to apply), red = staged and the booted image is over 28 days old.
+# Plugin lives in /usr/share/aerinite/noctalia-plugins/image-update.
+[widget.image_update]
+type = "tedohayer/image-update:status"
+
+# Setting [[plugins.source]] replaces Noctalia's built-in list, so the official
+# and community sources are repeated here.
+[plugins]
+enabled = ["tedohayer/image-update"]
+
+[[plugins.source]]
+kind = "git"
+location = "https://github.com/noctalia-dev/official-plugins"
+name = "official"
+
+[[plugins.source]]
+kind = "git"
+location = "https://github.com/noctalia-dev/community-plugins"
+name = "community"
+
+[[plugins.source]]
+kind = "path"
+location = "/usr/share/aerinite/noctalia-plugins"
+name = "aerinite"
