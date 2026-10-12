@@ -1,0 +1,10 @@
+# ostree writes this file when rpm-ostree or bootc stages an update for the
+# next boot (removed again at shutdown), so watching it means no polling.
+[Unit]
+Description=Watch for a staged system update
+
+[Path]
+PathChanged=/run/ostree/staged-deployment
+
+[Install]
+WantedBy=graphical-session.target

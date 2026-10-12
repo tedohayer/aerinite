@@ -1,0 +1,6 @@
+[Unit]
+Description=Notify that a system update is ready
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/aerinite-update-notify

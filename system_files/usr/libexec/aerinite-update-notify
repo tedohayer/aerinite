@@ -1,0 +1,8 @@
+#!/bin/bash
+# Run by aerinite-update-notify.path when an update is staged
+set -euo pipefail
+
+version=$(rpm-ostree status --json | jq -r 'first(.deployments[] | select(.staged) | .version) // empty')
+[ -n "${version}" ] || exit 0
+notify-send --app-name=Aerinite --icon=system-software-update \
+	"Update ready" "Restart to use version ${version}"
