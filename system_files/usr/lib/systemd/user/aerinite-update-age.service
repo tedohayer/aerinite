@@ -1,0 +1,7 @@
+[Unit]
+Description=Notify if the running system build is over a month old
+
+[Service]
+# exec, not oneshot: see aerinite-update-notify.service
+Type=exec
+ExecStart=/usr/libexec/aerinite-update-notify age
