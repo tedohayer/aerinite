@@ -29,12 +29,15 @@ env:
   CHANNEL: ${{ github.ref_name == 'beta' && 'beta' || 'stable' }}
   DEFAULT_TAG: ${{ github.ref_name == 'beta' && 'beta' || 'latest' }}
   TAG_PREFIX: ${{ github.ref_name == 'beta' && 'beta-' || '' }}
-  # Signing is skipped until a SIGNING_SECRET repository secret is added
+  # Forks without a SIGNING_SECRET publish unsigned; tedohayer/aerinite fails
   HAS_SIGNING_KEY: ${{ secrets.SIGNING_SECRET != '' }}
 
+# One build per branch at a time, whatever triggered it: concurrent builds
+# would race on the build tag and on latest. Only PR runs are cancelled;
+# main and beta builds queue.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}-${{ github.event_name }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   check-base:
@@ -190,6 +193,16 @@ jobs:
           echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}" >> ${GITHUB_ENV}
           echo "IMAGE_NAME=${IMAGE_NAME,,}" >> ${GITHUB_ENV}
 
+      # Forks without the key publish unsigned; Aerinite itself must never.
+      - name: Check signing key
+        if: github.event_name != 'pull_request' && env.HAS_SIGNING_KEY != 'true'
+        run: |
+          if [ "${GITHUB_REPOSITORY}" = tedohayer/aerinite ]; then
+            echo "::error::SIGNING_SECRET is missing; refusing to publish unsigned images"
+            exit 1
+          fi
+          echo "::warning::No SIGNING_SECRET; publishing unsigned images"
+
       # Actions are pinned to commit SHAs; Dependabot proposes updates
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -208,10 +221,13 @@ jobs:
         env:
           MAJOR: ${{ needs.check-base.outputs.fedora_major }}
         run: |
+          set -euo pipefail
           DATE=$(date -u +%Y%m%d)
-          EXISTING=$(skopeo list-tags --creds "${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}" \
-            "docker://${IMAGE_REGISTRY}/${IMAGE_NAME}" 2>/dev/null \
-            | jq -r '.Tags[]' | grep -E "^${TAG_PREFIX}${MAJOR}-${DATE}(\.[0-9]+)?$" || true)
+          # A failed listing must fail the build, not read as "no tags today"
+          # and overwrite today's tag.
+          TAGS=$(skopeo list-tags --creds "${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}" \
+            "docker://${IMAGE_REGISTRY}/${IMAGE_NAME}" | jq -r '.Tags[]')
+          EXISTING=$(grep -E "^${TAG_PREFIX}${MAJOR}-${DATE}(\.[0-9]+)?$" <<< "${TAGS}" || true)
           if [ -z "${EXISTING}" ]; then
             TAG="${TAG_PREFIX}${MAJOR}-${DATE}"
             VERSION="${MAJOR}.${DATE}"
@@ -327,16 +343,17 @@ jobs:
             "version=\(.[0].Labels["org.opencontainers.image.version"])"'
           [ "$(podman image inspect localhost/chunked-img | jq -r '.[0].Labels["containers.bootc"]')" = 1 ]
 
-      # Push the build tag first, then point the alias tags at the same digest.
+      # Push the build tag, sign its digest, and only then point the alias tags
+      # at it: latest must never name an unsigned image, since installs enforce
+      # signatures and would refuse the update.
       - name: Push to GHCR
         id: push
         if: github.event_name != 'pull_request'
         env:
           TAG: ${{ steps.version.outputs.tag }}
-          MAJOR: ${{ needs.check-base.outputs.fedora_major }}
+          REGISTRY_AUTH_FILE: ${{ runner.temp }}/auth.json
         run: |
           set -euo pipefail
-          export REGISTRY_AUTH_FILE="${RUNNER_TEMP}/auth.json"
           echo "${{ secrets.GITHUB_TOKEN }}" | podman login ghcr.io -u "${{ github.actor }}" --password-stdin
           IMAGE="${IMAGE_REGISTRY}/${IMAGE_NAME}"
           for attempt in 1 2 3; do
@@ -346,12 +363,7 @@ jobs:
           done
           DIGEST="$(< /tmp/digestfile)"
           [ -n "${DIGEST}" ] || { echo "push wrote no digest"; exit 1; }
-          ALIASES=("${DEFAULT_TAG}")
-          [ "${CHANNEL}" = stable ] && ALIASES+=("${MAJOR}")
-          for alias in "${ALIASES[@]}"; do
-            skopeo copy "docker://${IMAGE}@${DIGEST}" "docker://${IMAGE}:${alias}"
-          done
-          echo "Pushed ${IMAGE}:${TAG} and ${ALIASES[*]} @ ${DIGEST}"
+          echo "Pushed ${IMAGE}:${TAG} @ ${DIGEST}"
           echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
 
       - name: Install Cosign
@@ -371,6 +383,24 @@ jobs:
           echo "${{ secrets.GITHUB_TOKEN }}" | cosign login ghcr.io -u "${{ github.actor }}" --password-stdin
           cosign sign -y --key env://COSIGN_PRIVATE_KEY \
             "${IMAGE_REGISTRY}/${IMAGE_NAME}@${{ steps.push.outputs.digest }}"
+
+      # --preserve-digests fails rather than re-encode the manifest into a
+      # digest the signature doesn't cover.
+      - name: Tag aliases
+        if: github.event_name != 'pull_request'
+        env:
+          DIGEST: ${{ steps.push.outputs.digest }}
+          MAJOR: ${{ needs.check-base.outputs.fedora_major }}
+          REGISTRY_AUTH_FILE: ${{ runner.temp }}/auth.json
+        run: |
+          set -euo pipefail
+          IMAGE="${IMAGE_REGISTRY}/${IMAGE_NAME}"
+          ALIASES=("${DEFAULT_TAG}")
+          [ "${CHANNEL}" = stable ] && ALIASES+=("${MAJOR}")
+          for alias in "${ALIASES[@]}"; do
+            skopeo copy --preserve-digests "docker://${IMAGE}@${DIGEST}" "docker://${IMAGE}:${alias}"
+          done
+          echo "Tagged ${ALIASES[*]} @ ${DIGEST}"
 
       - name: Publish GitHub release
         if: github.event_name != 'pull_request'

@@ -46,8 +46,10 @@ Config belongs in `system_files/`, not in heredocs inside `build.sh`.
 - `build.yml` runs on push to `main` or `beta`, daily, and on manual dispatch. The
   daily run rebuilds `main` only if the `base-main` digest changed (always on Sunday),
   and dispatches `beta` the same way once its base image exists. A `beta` push whose
-  base isn't published yet skips the build with a notice. Builds rechunk, sign with
-  `SIGNING_SECRET`, and create a GitHub release.
+  base isn't published yet skips the build with a notice. Builds rechunk, push the
+  build tag, sign it with `SIGNING_SECRET` (missing key fails the build), then move
+  `latest`/`44` (or `beta`) to it and create a GitHub release. Builds of one branch
+  queue rather than run at once or cancel each other.
 - Add `[skip ci]` to commits that don't need a rebuild, such as workflow-only changes.
 - Pushes that touch only docs, `assets/`, `installer/`, `disk_config/`, the `Justfile`
   or `build-disk.yml` don't build. Neither
