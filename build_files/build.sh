@@ -27,7 +27,8 @@ dnf5 -y install \
 		xdg-user-dirs
 
 # nautilus is also the file chooser: xdg-desktop-portal-gnome, which niri's
-# portal config uses for open/save dialogs, hands them to Nautilus.
+# portal config uses for open/save dialogs, hands them to Nautilus. sushi is
+# its space-bar file preview (a D-Bus service Nautilus calls, so not a Flatpak).
 dnf5 -y install \
 		brightnessctl \
 		cascadia-fonts-all \
@@ -45,6 +46,7 @@ dnf5 -y install \
 		podman-compose \
 		podman-machine \
 		podman-tui \
+		sushi \
 		zsh \
 		zsh-autosuggestions \
 		zsh-syntax-highlighting
