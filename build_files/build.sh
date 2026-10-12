@@ -45,25 +45,25 @@ dnf5 -y install \
 		podman-compose \
 		podman-machine \
 		podman-tui \
-		qt6ct \
 		zsh \
 		zsh-autosuggestions \
 		zsh-syntax-highlighting
 
-dnf5 -y copr enable yalter/niri
 # Skip niri's recommends (waybar, swaylock, fuzzel...): Noctalia replaces them
 # and the parts we need (alacritty, portals, keyring) are installed above.
 dnf5 -y install --setopt=install_weak_deps=False niri xwayland-satellite
-dnf5 -y copr disable yalter/niri
 
 ### Desktop: Noctalia shell + Noctalia greeter
 
 # Noctalia provides the bar, notifications, launcher, lock screen, idle,
 # wallpaper and polkit agent, so no separate tools for those are installed.
 
+# greetd from Fedora, before Terra is enabled, so a newer Terra build can't win
+dnf5 -y install greetd greetd-selinux
+
 # Noctalia Greeter is only packaged in Terra; enable it just for this install.
 dnf5 -y install --nogpgcheck --repofrompath 'terra,https://repos.fyralabs.com/terra$releasever' terra-release
-dnf5 -y install greetd greetd-selinux noctalia-greeter
+dnf5 -y install noctalia-greeter
 sed -i "s/^enabled=1/enabled=0/" /etc/yum.repos.d/terra*.repo
 
 ### Branding
