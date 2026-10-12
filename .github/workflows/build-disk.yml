@@ -3,7 +3,8 @@ name: Build disk images
 
 # Manual only: builds the Aerinite installer ISO (image-builder bootc-generic-iso,
 # with installer/Containerfile as the installer environment and the published
-# image embedded as the payload) and a qcow2 VM image, and attaches them to the run.
+# image embedded as the payload) and attaches it to the run. No qcow2: nothing
+# would create a user in it, and the ISO in a VM is the real install test.
 on:
   workflow_dispatch:
 
@@ -19,12 +20,8 @@ concurrency:
 
 jobs:
   build:
-    name: Build disk images
+    name: Build installer ISO
     runs-on: ubuntu-24.04
-    strategy:
-      fail-fast: false
-      matrix:
-        disk-type: ["iso", "qcow2"]
     permissions:
       contents: read
       packages: read
@@ -56,42 +53,35 @@ jobs:
           echo "fedora_major=${VERSION%%.*}" >> "$GITHUB_OUTPUT"
 
       - name: Build the installer environment
-        if: matrix.disk-type == 'iso'
         run: |
           sudo podman build --pull=newer \
             --build-arg FEDORA_MAJOR="${{ steps.payload.outputs.fedora_major }}" \
             -f installer/Containerfile -t localhost/aerinite-installer:latest .
 
-      - name: Build disk image
+      - name: Build the ISO
         run: |
           mkdir -p output
-          if [ "${{ matrix.disk-type }}" = iso ]; then
-            ARGS=(--bootc-ref localhost/aerinite-installer:latest
-                  --bootc-installer-payload-ref "${{ steps.payload.outputs.image }}"
-                  --bootc-default-fs ext4
-                  bootc-generic-iso)
-          else
-            # filesystem layout comes from the image's bootc install config
-            ARGS=(--bootc-ref "${{ steps.payload.outputs.image }}"
-                  qcow2)
-          fi
           sudo podman run --rm --privileged --pull=newer \
             --security-opt label=type:unconfined_t \
             -v ./output:/output \
             -v /var/lib/containers/storage:/var/lib/containers/storage \
             "${IMAGE_BUILDER}" \
-            build --output-dir /output "${ARGS[@]}"
+            build --output-dir /output \
+            --bootc-ref localhost/aerinite-installer:latest \
+            --bootc-installer-payload-ref "${{ steps.payload.outputs.image }}" \
+            --bootc-default-fs ext4 \
+            bootc-generic-iso
           sudo chown -R "$(id -u):$(id -g)" output
           # image-builder names files after the installer base (bootc-fedora-…)
-          for f in $(find output -type f \( -name '*.iso' -o -name '*.qcow2' \)); do
-            mv "$f" "$(dirname "$f")/${IMAGE_NAME}-${{ steps.payload.outputs.version }}.${f##*.}"
+          for f in $(find output -type f -name '*.iso'); do
+            mv "$f" "$(dirname "$f")/${IMAGE_NAME}-${{ steps.payload.outputs.version }}.iso"
           done
           find output -type f -exec ls -lh {} \;
 
-      - name: Upload disk image
+      - name: Upload ISO
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: ${{ env.IMAGE_NAME }}-${{ matrix.disk-type }}-${{ steps.payload.outputs.version }}
+          name: ${{ env.IMAGE_NAME }}-iso-${{ steps.payload.outputs.version }}
           path: output
           if-no-files-found: error
           compression-level: 0

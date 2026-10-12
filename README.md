@@ -66,7 +66,7 @@ From then on, every update is checked against the key before it's installed. You
 
 ### Installer ISO
 
-The **Build disk images** workflow (Actions tab, run manually) builds an installer ISO and a qcow2 VM image from the latest published image and attaches them to the run. The ISO is made with image-builder's `bootc-generic-iso`: `installer/Containerfile` defines the Aerinite-branded Anaconda installer environment, and the Aerinite image is embedded in the ISO, so installs work offline. The installer creates your user, then points the system at `ghcr.io/tedohayer/aerinite:latest` with signature enforcement. `just build-iso` builds the same ISO locally (needs sudo).
+The **Build disk images** workflow (Actions tab, run manually) builds an installer ISO from the latest published image and attaches it to the run. The ISO is made with image-builder's `bootc-generic-iso`: `installer/Containerfile` defines the Aerinite-branded Anaconda installer environment, and the Aerinite image is embedded in the ISO, so installs work offline. The installer creates your user, then points the system at `ghcr.io/tedohayer/aerinite:latest` with signature enforcement. `just build-iso` builds the same ISO locally (needs sudo).
 
 ## Updating
 
@@ -135,7 +135,7 @@ cosign verify --key cosign.pub ghcr.io/tedohayer/aerinite:latest
 
 ```bash
 just build          # builds localhost/aerinite:latest
-just build-qcow2    # VM image via bootc-image-builder
+just build-qcow2    # VM image via bootc-image-builder; user from disk_config/user.toml
 just build-iso      # installer ISO
 ```
 

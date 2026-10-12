@@ -140,6 +140,15 @@ _build-bib $target_image $tag $type $config: (_rootful_load_image target_image t
 
     BUILDTMP=$(mktemp -p "${PWD}" -d -t _build-bib.XXXXXXXXXX)
 
+    # Add the local user from the git-ignored disk_config/user.toml (see disk.toml)
+    CONFIG=$(mktemp -p "${PWD}" -t _build_config.XXXXXXXXXX)
+    cat "${config}" > "${CONFIG}"
+    if [[ -f disk_config/user.toml ]]; then
+        cat disk_config/user.toml >> "${CONFIG}"
+    else
+        echo "No disk_config/user.toml: the image will have no user to log in with" >&2
+    fi
+
     sudo podman run \
       --rm \
       -it \
@@ -147,7 +156,7 @@ _build-bib $target_image $tag $type $config: (_rootful_load_image target_image t
       --pull=newer \
       --net=host \
       --security-opt label=type:unconfined_t \
-      -v $(pwd)/${config}:/config.toml:ro \
+      -v "${CONFIG}":/config.toml:ro \
       -v $BUILDTMP:/output \
       -v /var/lib/containers/storage:/var/lib/containers/storage \
       "${bib_image}" \
@@ -158,6 +167,7 @@ _build-bib $target_image $tag $type $config: (_rootful_load_image target_image t
     sudo mv -f $BUILDTMP/* output/
     sudo rmdir $BUILDTMP
     sudo chown -R $USER:$USER output/
+    rm -f "${CONFIG}"
 
 # Podman builds the image from the Containerfile and creates a bootable image
 # Parameters:
@@ -170,22 +180,25 @@ _build-bib $target_image $tag $type $config: (_rootful_load_image target_image t
 _rebuild-bib $target_image $tag $type $config: (build target_image tag) && (_build-bib target_image tag type config)
 
 # Build a QCOW2 virtual machine image
-[group('Build Virtal Machine Image')]
+[group('Build Virtual Machine Image')]
 build-qcow2 $target_image=("localhost/" + image_name) $tag=default_tag: && (_build-bib target_image tag "qcow2" "disk_config/disk.toml")
 
 # Build a RAW virtual machine image
-[group('Build Virtal Machine Image')]
+[group('Build Virtual Machine Image')]
 build-raw $target_image=("localhost/" + image_name) $tag=default_tag: && (_build-bib target_image tag "raw" "disk_config/disk.toml")
 
 # Build the installer ISO like CI does: installer/Containerfile as the installer
 # environment, the published image embedded as the payload (image-builder
 # bootc-generic-iso). Output lands in output/.
-[group('Build Virtal Machine Image')]
+[group('Build Virtual Machine Image')]
 build-iso payload=("ghcr.io/tedohayer/" + image_name + ":" + default_tag):
     #!/usr/bin/env bash
     set -euo pipefail
     sudo podman pull "{{ payload }}"
-    sudo podman build --pull=newer -f installer/Containerfile -t localhost/aerinite-installer:latest .
+    # Installer on the payload's Fedora release (beta payloads are newer)
+    MAJOR=$(sudo podman run --rm "{{ payload }}" rpm -E %fedora)
+    sudo podman build --pull=newer --build-arg FEDORA_MAJOR="${MAJOR}" \
+        -f installer/Containerfile -t localhost/aerinite-installer:latest .
     mkdir -p output
     sudo podman run --rm --privileged --pull=newer \
         --security-opt label=type:unconfined_t \
@@ -199,11 +212,11 @@ build-iso payload=("ghcr.io/tedohayer/" + image_name + ":" + default_tag):
         bootc-generic-iso
 
 # Rebuild a QCOW2 virtual machine image
-[group('Build Virtal Machine Image')]
+[group('Build Virtual Machine Image')]
 rebuild-qcow2 $target_image=("localhost/" + image_name) $tag=default_tag: && (_rebuild-bib target_image tag "qcow2" "disk_config/disk.toml")
 
 # Rebuild a RAW virtual machine image
-[group('Build Virtal Machine Image')]
+[group('Build Virtual Machine Image')]
 rebuild-raw $target_image=("localhost/" + image_name) $tag=default_tag: && (_rebuild-bib target_image tag "raw" "disk_config/disk.toml")
 
 # Run a virtual machine with the specified image type and configuration
@@ -213,9 +226,6 @@ _run-vm $target_image $tag $type $config:
 
     # Determine the image file based on the type
     image_file="output/${type}/disk.${type}"
-    if [[ $type == iso ]]; then
-        image_file="output/bootiso/install.iso"
-    fi
 
     # Build the image if it does not exist
     if [[ ! -f "${image_file}" ]]; then
@@ -249,15 +259,15 @@ _run-vm $target_image $tag $type $config:
     podman run "${run_args[@]}"
 
 # Run a virtual machine from a QCOW2 image
-[group('Run Virtal Machine')]
+[group('Run Virtual Machine')]
 run-vm-qcow2 $target_image=("localhost/" + image_name) $tag=default_tag: && (_run-vm target_image tag "qcow2" "disk_config/disk.toml")
 
 # Run a virtual machine from a RAW image
-[group('Run Virtal Machine')]
+[group('Run Virtual Machine')]
 run-vm-raw $target_image=("localhost/" + image_name) $tag=default_tag: && (_run-vm target_image tag "raw" "disk_config/disk.toml")
 
 # Run a virtual machine using systemd-vmspawn
-[group('Run Virtal Machine')]
+[group('Run Virtual Machine')]
 spawn-vm rebuild="0" type="qcow2" ram="6G":
     #!/usr/bin/env bash
 
