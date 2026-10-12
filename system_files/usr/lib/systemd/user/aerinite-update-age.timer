@@ -1,0 +1,12 @@
+# Daily, and shortly after login, check whether the running build is over a
+# month old (aerinite-update-notify age)
+[Unit]
+Description=Check the age of the running system build
+
+[Timer]
+OnStartupSec=5min
+OnCalendar=daily
+Persistent=true
+
+[Install]
+WantedBy=graphical-session.target

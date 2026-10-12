@@ -70,7 +70,7 @@ The **Build disk images** workflow (Actions tab, run manually) builds an install
 
 ## Updating
 
-Updates are pulled from `ghcr.io/tedohayer/aerinite:latest` and checked against Aerinite's signing key. ublue's update service (`rpm-ostreed-automatic`) stages them automatically; to update by hand, run `rpm-ostree upgrade` (no sudo needed; `--preview` shows the package changes first) or `sudo bootc upgrade`, then reboot. A notification says when an update is ready (`ujust toggle-update-notification` turns it off). CI rebuilds whenever `base-main` changes, every Sunday (to pick up niri, Noctalia and greeter updates), and on every push to `main`.
+Updates are pulled from `ghcr.io/tedohayer/aerinite:latest` and checked against Aerinite's signing key. ublue's update service (`rpm-ostreed-automatic`) stages them automatically; to update by hand, run `rpm-ostree upgrade` (no sudo needed; `--preview` shows the package changes first) or `sudo bootc upgrade`, then reboot. Notifications say when an update is ready or the running build is over a month old (`ujust toggle-update-notifications` turns them off). CI rebuilds whenever `base-main` changes, every Sunday (to pick up niri, Noctalia and greeter updates), and on every push to `main`.
 
 ### Versions and tags
 
