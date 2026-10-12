@@ -1,3 +1,12 @@
 [[customizations.filesystem]]
 mountpoint = "/"
 minsize = "20 GiB"
+
+# No user is created here: put one in disk_config/user.toml (git-ignored),
+# which `just build-qcow2` appends, e.g.
+#
+# [[customizations.user]]
+# name = "me"
+# key = "ssh-ed25519 AAAA..."
+# password = "$6$..."   # openssl passwd -6
+# groups = ["wheel"]

@@ -14,6 +14,10 @@ on:
       - '**/README.md'
       - 'AGENTS.md'
       - 'assets/**'
+      - 'installer/**'
+      - 'disk_config/**'
+      - 'Justfile'
+      - '.github/workflows/build-disk.yml'
   workflow_dispatch:
 
 env:
@@ -194,7 +198,7 @@ jobs:
 
       # This is optional, but if you see that your builds are way too big for the runners, you can enable this by uncommenting the following lines:
       - name: Maximize build space
-        uses: ublue-os/remove-unwanted-software@695eb75bc387dbcd9685a8e72d23439d8686cba6
+        uses: ublue-os/remove-unwanted-software@cc0becac701cf642c8f0a6613bbdaf5dc36b259e # v9
 
       # Universal Blue style versions: tag 44-20261008, then 44-20261008.1, .2…
       # for later builds that day; the version label uses dots (44.20261008.1).
@@ -235,8 +239,7 @@ jobs:
 
       # Rechunking drops the image config, so collect every label the final
       # image needs: the build's own labels (base image name/digest), minus
-      # stale ostree ones, overridden by ours. ostree.linux must survive: the
-      # nightly check-base job compares it against the base image's kernel.
+      # stale ostree ones, overridden by ours.
       - name: Collect labels
         env:
           VERSION: ${{ steps.version.outputs.version }}

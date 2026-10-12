@@ -49,10 +49,11 @@ Config belongs in `system_files/`, not in heredocs inside `build.sh`.
   base isn't published yet skips the build with a notice. Builds rechunk, sign with
   `SIGNING_SECRET`, and create a GitHub release.
 - Add `[skip ci]` to commits that don't need a rebuild, such as workflow-only changes.
-- Pushes that touch only `README.md`, `AGENTS.md` or `assets/` don't build. Neither
+- Pushes that touch only docs, `assets/`, `installer/`, `disk_config/`, the `Justfile`
+  or `build-disk.yml` don't build. Neither
   does a push whose tree is unchanged; use `gh workflow run build.yml`.
-- `build-disk.yml` is manual and builds the ISO and qcow2 from the published `:latest`,
-  so publish the image first, then build disks.
+- `build-disk.yml` is manual and builds the ISO from the published `:latest`, so
+  publish the image first, then build the ISO.
 - Pin actions by commit SHA.
 
 ## Testing
