@@ -7,3 +7,6 @@ Branch=stable
 
 [Flatpak Preinstall io.github.kolunmi.Bazaar]
 Branch=stable
+
+[Flatpak Preinstall org.gnome.TextEditor]
+Branch=stable

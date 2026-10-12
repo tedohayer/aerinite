@@ -30,11 +30,11 @@ Universal Blue. Like other Universal Blue images, it stays out of your way:
 
 ## What you get
 
-- **Desktop**: niri + Noctalia (bar, notifications, launcher, lock screen, idle, wallpaper, polkit agent), Alacritty, Nautilus (also the file chooser for open/save dialogs), imv
+- **Desktop**: niri + Noctalia (bar, notifications, launcher, lock screen, idle, wallpaper, polkit agent), Alacritty, Nautilus, imv
 - **Login**: [Noctalia Greeter](https://github.com/noctalia-dev/noctalia-greeter), with niri preselected
 - **Shell**: zsh and fish are preinstalled alongside bash
 - **Containers & VMs**: podman (+ compose, machine, tui) and the virtualization group; distrobox comes with base-main
-- **Flatpaks**: Firefox and the [Bazaar](https://github.com/kolunmi/bazaar) app store, installed on first boot (uninstalling one opts out)
+- **Flatpaks**: Firefox, GNOME Text Editor and the [Bazaar](https://github.com/kolunmi/bazaar) app store, installed on first boot (uninstalling one opts out)
 - **Hardware**: fingerprint for sudo, password prompts and the lock screen (not login), brightnessctl, playerctl, power-profiles-daemon
 - **Fonts**: Cascadia, JetBrains Mono, Google Noto
 
@@ -47,7 +47,7 @@ Codecs come from base-main (negativo17 fedora-multimedia). The rpm Firefox and n
 Two things to know before switching:
 
 - If you already have `~/.config/niri/config.kdl` (say, from another niri setup), niri uses it instead of Aerinite's, so Noctalia won't start. Move it aside, or start it with `include "/etc/niri/config.kdl"` and keep only your changes below that.
-- On first boot, `flatpak preinstall` installs Firefox and Bazaar and removes Flatpaks your current image preinstalled that Aerinite doesn't list. Apps you installed yourself stay; reinstall any of the others you want from Bazaar.
+- On first boot, `flatpak preinstall` installs Firefox, Text Editor and Bazaar and removes Flatpaks your current image preinstalled that Aerinite doesn't list. Apps you installed yourself stay; reinstall any of the others you want from Bazaar.
 
 Any Fedora Atomic desktop or Universal Blue image works as a starting point. Your current system doesn't have Aerinite's signing key yet, so the first switch can't verify the image:
 
