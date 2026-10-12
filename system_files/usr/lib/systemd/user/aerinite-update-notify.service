@@ -2,5 +2,7 @@
 Description=Notify that a system update is ready
 
 [Service]
-Type=oneshot
+# exec, not oneshot: the script waits on the notification for as long as
+# it is up, and a oneshot would be killed by the start timeout
+Type=exec
 ExecStart=/usr/libexec/aerinite-update-notify
