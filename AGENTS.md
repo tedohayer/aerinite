@@ -52,11 +52,24 @@ Config belongs in `system_files/`, not in heredocs inside `build.sh`.
   queue rather than run at once or cancel each other.
 - Add `[skip ci]` to commits that don't need a rebuild, such as workflow-only changes.
 - Pushes that touch only docs, `assets/`, `installer/`, `disk_config/`, the `Justfile`
-  or `build-disk.yml` don't build. Neither
-  does a push whose tree is unchanged; use `gh workflow run build.yml`.
+  or `build-disk.yml` don't build. Neither does a push whose tree is unchanged; use
+  `gh workflow run build.yml`.
 - `build-disk.yml` is manual and builds the ISO from the published `:latest`, so
   publish the image first, then build the ISO.
 - Pin actions by commit SHA.
+
+## Update notifications
+
+- `/usr/libexec/aerinite-update-notify` sends them with `notify-send` (Noctalia shows
+  them). Its `Restart…` button opens Noctalia's session menu, which asks for
+  confirmation; our code never reboots.
+- `staged` mode: `aerinite-update-notify.path` (user unit) watches
+  `/run/ostree/staged-deployment` and says "Update ready". No polling.
+- `age` mode: `aerinite-update-age.timer` runs after login and daily, and warns when
+  the booted build is over 30 days old ("Restart to update" if one is staged).
+- Both units are enabled `--global`. `ujust toggle-update-notifications`
+  (`/usr/share/ublue-os/just/60-custom.just`, which base-main's justfile imports)
+  masks or unmasks them per user.
 
 ## Testing
 
@@ -65,6 +78,8 @@ Config belongs in `system_files/`, not in heredocs inside `build.sh`.
   completes, home dir exists, the secrets service unlocks at login (gnome-keyring on
   `main`, oo7 on `beta`), `systemctl --failed` is empty, and the origin is
   `ostree-image-signed:docker://ghcr.io/tedohayer/aerinite:latest` (or `:beta`).
+- Test notification changes with a copy of the script fed a fake
+  `rpm-ostree status --json`; `rpm-ostree upgrade` exercises the path unit.
 
 ## Commits
 
