@@ -161,6 +161,7 @@ glib-compile-schemas /usr/share/glib-2.0/schemas
 cp --update=none /usr/share/plymouth/themes/spinner/*.png /usr/share/plymouth/themes/aerinite/
 
 systemctl enable aerinite-flatpak-preinstall.service
+systemctl --global enable aerinite-update-notify.path
 systemctl enable greetd.service
 systemctl disable getty@tty1.service
 
