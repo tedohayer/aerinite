@@ -266,24 +266,6 @@ run-vm-qcow2 $target_image=("localhost/" + image_name) $tag=default_tag: && (_ru
 [group('Run Virtual Machine')]
 run-vm-raw $target_image=("localhost/" + image_name) $tag=default_tag: && (_run-vm target_image tag "raw" "disk_config/disk.toml")
 
-# Run a virtual machine using systemd-vmspawn
-[group('Run Virtual Machine')]
-spawn-vm rebuild="0" type="qcow2" ram="6G":
-    #!/usr/bin/env bash
-
-    set -euo pipefail
-
-    [ "{{ rebuild }}" -eq 1 ] && echo "Rebuilding the {{ type }} image" && just "build-{{ type }}"
-
-    systemd-vmspawn \
-      -M "bootc-image" \
-      --console=gui \
-      --cpus=2 \
-      --ram=$(echo {{ ram }}| /usr/bin/numfmt --from=iec) \
-      --network-user-mode \
-      --vsock=false --pass-ssh-key=false \
-      -i ./output/**/*.{{ type }}
-
 # Runs shell check on all Bash scripts
 lint:
     #!/usr/bin/env bash

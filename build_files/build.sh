@@ -7,8 +7,6 @@ set -ouex pipefail
 # The base is Universal Blue's base-main: Fedora Atomic with no desktop, plus
 # ublue's codecs (negativo17 fedora-multimedia), kernel, udev rules and ujust.
 
-dnf5 -y group install virtualization --with-optional
-
 # Desktop session essentials that base-main doesn't ship
 dnf5 -y install \
 		alacritty \
@@ -44,8 +42,6 @@ dnf5 -y install \
 		nautilus \
 		noctalia \
 		podman-compose \
-		podman-machine \
-		podman-tui \
 		sushi \
 		zsh \
 		zsh-autosuggestions \
