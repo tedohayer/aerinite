@@ -1,11 +1,13 @@
 # ISO volume label and GRUB menu for the Aerinite installer (image-builder
 # bootc-generic-iso). inst.stage2 must match the label.
+# enforcing=0: the installer environment doesn't boot with SELinux enforcing,
+# and selinux=0 would make Anaconda disable SELinux on the installed system.
 label: "Aerinite-Installer"
 grub2:
   entries:
     - name: "Install Aerinite"
-      linux: "/images/pxeboot/vmlinuz inst.stage2=hd:LABEL=Aerinite-Installer console=tty0 inst.graphical selinux=0 rhgb quiet"
+      linux: "/images/pxeboot/vmlinuz inst.stage2=hd:LABEL=Aerinite-Installer console=tty0 inst.graphical enforcing=0 rhgb quiet"
       initrd: "/images/pxeboot/initrd.img"
     - name: "Install Aerinite (basic graphics)"
-      linux: "/images/pxeboot/vmlinuz inst.stage2=hd:LABEL=Aerinite-Installer console=tty0 inst.graphical nomodeset selinux=0 quiet"
+      linux: "/images/pxeboot/vmlinuz inst.stage2=hd:LABEL=Aerinite-Installer console=tty0 inst.graphical nomodeset enforcing=0 quiet"
       initrd: "/images/pxeboot/initrd.img"

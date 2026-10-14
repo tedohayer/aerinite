@@ -52,4 +52,23 @@ for fstab in /mnt/sysimage/ostree/deploy/*/deploy/*/etc/fstab; do
     sed -i -E '/^[^#[:space:]]+[[:space:]]+\/[[:space:]]/d' "$fstab"
     cat "$fstab"
 done
+
+# The installer runs with SELinux permissive (enforcing=0 in iso.yaml), so
+# files Anaconda creates on the target (/etc/passwd, /etc/shadow, home
+# directories, /var/log) get their parent directory's generic label, since
+# their /mnt/sysimage paths match nothing in the policy. Relabel /etc and /var
+# with the installed system's policy. The stateroot holds /var, so it is the
+# root for that pass. setfiles refuses paths through symlinks, and /mnt is one
+# in the (bootc) installer, hence realpath. Anaconda copies its logs to
+# /var/log/anaconda after %post, which would create /var/log as var_t (journald
+# can't create its directory there on first boot), so create it first.
+for deploy in /mnt/sysimage/ostree/deploy/*/deploy/*/; do
+    deploy=$(realpath "$deploy")
+    stateroot=${deploy%/deploy/*}
+    mkdir -p "$stateroot/var/log/anaconda"
+    . "$deploy/etc/selinux/config"
+    fc=$deploy/etc/selinux/$SELINUXTYPE/contexts/files/file_contexts
+    setfiles -F -r "$deploy" "$fc" "$deploy/etc"
+    setfiles -F -r "$stateroot" "$fc" "$stateroot/var"
+done
 %end
