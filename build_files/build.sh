@@ -62,7 +62,9 @@ dnf5 -y install greetd greetd-selinux
 # Noctalia Greeter is only packaged in Terra; enable it just for this install.
 dnf5 -y install --nogpgcheck --repofrompath 'terra,https://repos.fyralabs.com/terra$releasever' terra-release
 dnf5 -y install noctalia-greeter
-sed -i "s/^enabled=1/enabled=0/" /etc/yum.repos.d/terra*.repo
+# Fedora 45's terra-release moved terra.repo to /usr/share/dnf5/repos.d, so
+# disable it with an override rather than by editing the file.
+dnf5 config-manager setopt terra.enabled=0
 
 ### Branding
 
