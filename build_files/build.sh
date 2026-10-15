@@ -68,6 +68,11 @@ dnf5 -y install noctalia-greeter
 # disable it with an override rather than by editing the file.
 dnf5 config-manager setopt terra.enabled=0
 
+# The greeter runs confined like GDM (xdm_t), which can only read the generic
+# var_lib_t its state directory would get, so it can't save sync.toml. Label
+# the directory like greetd's own /var/lib/greetd.
+semanage fcontext -a -e /var/lib/greetd /var/lib/noctalia-greeter
+
 ### Branding
 
 # Rebrand os-release (boot menu entries, installer, hostname) as aerinite.
