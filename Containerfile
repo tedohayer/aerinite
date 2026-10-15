@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=ghcr.io/ublue-os/base-main:44
+ARG BASE_IMAGE=ghcr.io/ublue-os/base-main:45
 
 # Build context: scripts and files used during the build, not copied into the image
 FROM scratch AS ctx

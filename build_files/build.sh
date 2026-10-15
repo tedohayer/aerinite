@@ -11,9 +11,10 @@ set -ouex pipefail
 dnf5 -y install \
 		alacritty \
 		bluez \
-		gnome-keyring \
-		gnome-keyring-pam \
 		NetworkManager-wifi \
+		oo7-daemon \
+		oo7-portal \
+		pam_oo7 \
 		pipewire \
 		pipewire-pulseaudio \
 		playerctl \
@@ -27,7 +28,8 @@ dnf5 -y install \
 # nautilus is also the file chooser: xdg-desktop-portal-gnome, which niri's
 # portal config uses for open/save dialogs, hands them to Nautilus. sushi is
 # its space-bar file preview (a D-Bus service Nautilus calls, so not a Flatpak).
-dnf5 -y install \
+# noctalia recommends gnome-keyring, which oo7 replaces (checked below).
+dnf5 -y install --exclude=gnome-keyring \
 		brightnessctl \
 		cascadia-fonts-all \
 		fastfetch \
@@ -48,7 +50,7 @@ dnf5 -y install \
 		zsh-syntax-highlighting
 
 # Skip niri's recommends (waybar, swaylock, fuzzel...): Noctalia replaces them
-# and the parts we need (alacritty, portals, keyring) are installed above.
+# and the parts we need (alacritty, portals, secrets service) are installed above.
 dnf5 -y install --setopt=install_weak_deps=False niri xwayland-satellite
 
 ### Desktop: Noctalia shell + Noctalia greeter
@@ -65,6 +67,11 @@ dnf5 -y install noctalia-greeter
 # Fedora 45's terra-release moved terra.repo to /usr/share/dnf5/repos.d, so
 # disable it with an override rather than by editing the file.
 dnf5 config-manager setopt terra.enabled=0
+
+# The greeter runs confined like GDM (xdm_t), which can only read the generic
+# var_lib_t its state directory would get, so it can't save sync.toml. Label
+# the directory like greetd's own /var/lib/greetd.
+semanage fcontext -a -e /var/lib/greetd /var/lib/noctalia-greeter
 
 ### Branding
 
@@ -96,7 +103,10 @@ cp -avf /ctx/system_files/. /
 
 # Add the pam_systemd session line the greeter needs (upstream helper). It
 # leaves a timestamped backup, which is junk in an image and changes the
-# initramfs/unpackaged layer on every build, so remove it.
+# initramfs/unpackaged layer on every build, so remove it. Fedora 45's greetd
+# ships its PAM file in /usr/lib/pam.d; the helper and the edits below only
+# look in /etc/pam.d, so copy it there (an /etc/pam.d file overrides it).
+[ -f /etc/pam.d/greetd ] || cp /usr/lib/pam.d/greetd /etc/pam.d/greetd
 /usr/share/noctalia-greeter/setup_greetd_pam.sh
 rm -f /etc/pam.d/greetd.bak.noctalia.*
 
@@ -115,6 +125,23 @@ grep -q pam_fprintd /etc/pam.d/system-auth
 if grep -q -e system-auth -e pam_fprintd \
 		/etc/pam.d/greetd /etc/pam.d/password-auth /etc/pam.d/postlogin; then
 	echo "greetd PAM still reaches pam_fprintd" >&2
+	exit 1
+fi
+
+# Fedora 45 replaces GNOME Keyring with oo7. Give greetd the same three hooks
+# as GDM: pass the login password to oo7, follow password changes, start the
+# daemon. Fedora 45's greetd has the first and last; add whichever is missing.
+pam=/etc/pam.d/greetd
+grep -Eq '^-?auth[[:space:]].*pam_oo7' "$pam" ||
+	sed -i '/^auth[[:space:]]*include[[:space:]]*postlogin/i -auth       optional    pam_oo7.so' "$pam"
+grep -Eq '^-?password[[:space:]].*pam_oo7' "$pam" ||
+	sed -i '/^password[[:space:]]*include[[:space:]]*password-auth/a -password   optional    pam_oo7.so use_authtok' "$pam"
+grep -Eq '^-?session[[:space:]].*pam_oo7' "$pam" ||
+	sed -i '/^session[[:space:]]*include[[:space:]]*postlogin/i -session    optional    pam_oo7.so auto_start' "$pam"
+[ "$(grep -c pam_oo7 /etc/pam.d/greetd)" -eq 3 ]
+# Only one secrets service may own org.freedesktop.secrets
+if rpm -q gnome-keyring; then
+	echo "gnome-keyring is installed alongside oo7" >&2
 	exit 1
 fi
 
