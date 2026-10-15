@@ -28,7 +28,8 @@ dnf5 -y install \
 # nautilus is also the file chooser: xdg-desktop-portal-gnome, which niri's
 # portal config uses for open/save dialogs, hands them to Nautilus. sushi is
 # its space-bar file preview (a D-Bus service Nautilus calls, so not a Flatpak).
-dnf5 -y install \
+# noctalia recommends gnome-keyring, which oo7 replaces (checked below).
+dnf5 -y install --exclude=gnome-keyring \
 		brightnessctl \
 		cascadia-fonts-all \
 		fastfetch \
@@ -97,7 +98,10 @@ cp -avf /ctx/system_files/. /
 
 # Add the pam_systemd session line the greeter needs (upstream helper). It
 # leaves a timestamped backup, which is junk in an image and changes the
-# initramfs/unpackaged layer on every build, so remove it.
+# initramfs/unpackaged layer on every build, so remove it. Fedora 45's greetd
+# ships its PAM file in /usr/lib/pam.d; the helper and the edits below only
+# look in /etc/pam.d, so copy it there (an /etc/pam.d file overrides it).
+[ -f /etc/pam.d/greetd ] || cp /usr/lib/pam.d/greetd /etc/pam.d/greetd
 /usr/share/noctalia-greeter/setup_greetd_pam.sh
 rm -f /etc/pam.d/greetd.bak.noctalia.*
 
@@ -119,16 +123,16 @@ if grep -q -e system-auth -e pam_fprintd \
 	exit 1
 fi
 
-# Fedora 45 replaces GNOME Keyring with oo7. GDM's PAM stack calls pam_oo7, but
-# greetd's still only knows pam_gnome_keyring, so add the same three hooks:
-# pass the login password to oo7, follow password changes, start the daemon.
-if ! grep -q pam_oo7 /etc/pam.d/greetd; then
-	sed -i \
-		-e '/^auth[[:space:]]*include[[:space:]]*postlogin/i -auth       optional    pam_oo7.so' \
-		-e '/^password[[:space:]]*include[[:space:]]*password-auth/a -password   optional    pam_oo7.so use_authtok' \
-		-e '/^session[[:space:]]*include[[:space:]]*postlogin/i -session    optional    pam_oo7.so auto_start' \
-		/etc/pam.d/greetd
-fi
+# Fedora 45 replaces GNOME Keyring with oo7. Give greetd the same three hooks
+# as GDM: pass the login password to oo7, follow password changes, start the
+# daemon. Fedora 45's greetd has the first and last; add whichever is missing.
+pam=/etc/pam.d/greetd
+grep -Eq '^-?auth[[:space:]].*pam_oo7' "$pam" ||
+	sed -i '/^auth[[:space:]]*include[[:space:]]*postlogin/i -auth       optional    pam_oo7.so' "$pam"
+grep -Eq '^-?password[[:space:]].*pam_oo7' "$pam" ||
+	sed -i '/^password[[:space:]]*include[[:space:]]*password-auth/a -password   optional    pam_oo7.so use_authtok' "$pam"
+grep -Eq '^-?session[[:space:]].*pam_oo7' "$pam" ||
+	sed -i '/^session[[:space:]]*include[[:space:]]*postlogin/i -session    optional    pam_oo7.so auto_start' "$pam"
 [ "$(grep -c pam_oo7 /etc/pam.d/greetd)" -eq 3 ]
 # Only one secrets service may own org.freedesktop.secrets
 if rpm -q gnome-keyring; then
