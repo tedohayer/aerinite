@@ -33,22 +33,21 @@ Config belongs in `system_files/`, not in heredocs inside `build.sh`.
 
 ## Branches
 
-- `main` is the stable channel: `latest`, `44`, `44-YYYYMMDD[.N]`.
-- `beta` is for larger changes before they reach `latest`, like a new Fedora release
-  (currently Fedora 45 with oo7 replacing gnome-keyring). It publishes `beta` and
-  `beta-45-YYYYMMDD[.N]` as prereleases, and never touches `latest` or the Fedora
-  major tag.
+- `main` is the stable channel: `latest`, `45`, `45-YYYYMMDD[.N]`.
+- `beta` is for larger changes before they reach `latest`, like a new Fedora release.
+  It publishes `beta` and `beta-<major>-YYYYMMDD[.N]` as prereleases, and never
+  touches `latest` or the Fedora major tag.
 - `beta` is `main` plus its own changes. Make shared changes (CI, docs, config) on
   `main`, then merge `main` into `beta`. Promote by merging `beta` into `main`.
 
 ## CI
 
 - `build.yml` runs on push to `main` or `beta`, daily, and on manual dispatch. The
-  daily run rebuilds `main` only if the `base-main` digest changed (always on Sunday),
-  and dispatches `beta` the same way once its base image exists. A `beta` push whose
-  base isn't published yet skips the build with a notice. Builds rechunk, push the
+  daily run rebuilds `main` only if the `base-main` digest changed (always on Sunday);
+  other branches build only on push or dispatch. A `beta` push whose base isn't
+  published yet skips the build with a notice. Builds rechunk, push the
   build tag, sign it with `SIGNING_SECRET` (missing key fails the build), then move
-  `latest`/`44` (or `beta`) to it and create a GitHub release. Builds of one branch
+  `latest`/`45` (or `beta`) to it and create a GitHub release. Builds of one branch
   queue rather than run at once or cancel each other.
 - Add `[skip ci]` to commits that don't need a rebuild, such as workflow-only changes.
 - Pushes that touch only docs, `assets/`, `installer/`, `disk_config/`, the `Justfile`
@@ -75,8 +74,7 @@ Config belongs in `system_files/`, not in heredocs inside `build.sh`.
 
 - `just build` builds locally; `just build-iso` builds the installer (needs sudo).
 - For installer/first-boot changes, test the CI ISO in a QEMU VM (UEFI): install
-  completes, home dir exists, the secrets service unlocks at login (gnome-keyring on
-  `main`, oo7 on `beta`), `systemctl --failed` is empty, and the origin is
+  completes, home dir exists, the secrets service (oo7) unlocks at login, `systemctl --failed` is empty, and the origin is
   `ostree-image-signed:docker://ghcr.io/tedohayer/aerinite:latest` (or `:beta`).
 - Test notification changes with a copy of the script fed a fake
   `rpm-ostree status --json`; `rpm-ostree upgrade` exercises the path unit.

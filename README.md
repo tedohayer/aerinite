@@ -80,12 +80,12 @@ Versions follow Universal Blue's scheme. Each build gets:
 | Tag | Example | Use |
 |---|---|---|
 | `latest` | | Newest build; what installs follow by default |
-| Fedora major | `44` | Newest build on that Fedora release; pin to it to choose when to move to the next one |
-| Build | `44-20261008`, `44-20261008.1` | One specific build: Fedora major, UTC date, and a counter for later builds that day. Never overwritten |
+| Fedora major | `45` | Newest build on that Fedora release; pin to it to choose when to move to the next one |
+| Build | `45-20261015`, `45-20261015.1` | One specific build: Fedora major, UTC date, and a counter for later builds that day. Never overwritten |
 | `beta` | | Newest build from the `beta` branch |
 | Beta build | `beta-45-20261010` | One specific beta build |
 
-The image's `org.opencontainers.image.version` label holds the dotted form (`44.20261008.1`). Every build also gets a [GitHub release](https://github.com/tedohayer/aerinite/releases) with the commits since the previous build and the base image it was built on.
+The image's `org.opencontainers.image.version` label holds the dotted form (`45.20261015.1`). Every build also gets a [GitHub release](https://github.com/tedohayer/aerinite/releases) with the commits since the previous build and the base image it was built on.
 
 The Fedora release comes from `BASE_IMAGE` in the `Containerfile`; moving to the next one is a one-line change there.
 
