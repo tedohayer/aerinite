@@ -32,6 +32,7 @@ Universal Blue. Like other Universal Blue images, it stays out of your way:
 
 - **Desktop**: niri + Noctalia (bar, notifications, launcher, lock screen, idle, wallpaper, polkit agent), Alacritty, Nautilus, imv
 - **Login**: [Noctalia Greeter](https://github.com/noctalia-dev/noctalia-greeter), with niri preselected
+- **Secrets**: [oo7](https://github.com/linux-credentials/oo7)
 - **Shell**: zsh and fish are preinstalled alongside bash
 - **Containers**: podman (+ compose); distrobox comes with base-main
 - **Flatpaks**: Firefox, GNOME Text Editor and the [Bazaar](https://github.com/kolunmi/bazaar) app store, installed on first boot (uninstalling one opts out)
