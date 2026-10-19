@@ -1,8 +1,9 @@
 # AGENTS.md
 
 Aerinite is a bootc image: Universal Blue `base-main` + niri + Noctalia, published
-as `ghcr.io/tedohayer/aerinite`. It's alpha and built for the maintainer's personal
-use. The goal is a stable platform with minimal changes, not a growing feature set.
+as `ghcr.io/tedohayer/aerinite`. It's beta and built to be a minimalist OS for the
+maintainer's personal laptop (Framework 13). The goal is a stable platform with
+minimal changes, not a growing feature set.
 
 ## Principles
 
