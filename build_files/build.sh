@@ -26,8 +26,7 @@ dnf5 -y install \
 		xdg-user-dirs
 
 # nautilus is also the file chooser: xdg-desktop-portal-gnome, which niri's
-# portal config uses for open/save dialogs, hands them to Nautilus. sushi is
-# its space-bar file preview (a D-Bus service Nautilus calls, so not a Flatpak).
+# portal config uses for open/save dialogs, hands them to Nautilus.
 # noctalia recommends gnome-keyring, which oo7 replaces (checked below).
 dnf5 -y install --exclude=gnome-keyring \
 		brightnessctl \
@@ -44,7 +43,6 @@ dnf5 -y install --exclude=gnome-keyring \
 		nautilus \
 		noctalia \
 		podman-compose \
-		sushi \
 		zsh \
 		zsh-autosuggestions \
 		zsh-syntax-highlighting
