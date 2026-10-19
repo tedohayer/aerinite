@@ -42,6 +42,10 @@ Codecs come from base-main (negativo17 fedora-multimedia). The rpm Firefox and n
 
 ## Install
 
+### Installer ISO
+
+Sign in to GitHub and download the ISO from the latest [Build disk images](https://github.com/tedohayer/aerinite/actions/workflows/build-disk.yml) run. Unzip it, write it to a USB drive with [Fedora Media Writer](https://github.com/FedoraQt/MediaWriter) and boot from it. The installer works offline and sets up signed updates from `ghcr.io/tedohayer/aerinite:latest`.
+
 ### From an existing Fedora Atomic or Universal Blue system
 
 Two things to know before switching:
@@ -64,36 +68,19 @@ sudo bootc switch --enforce-container-sigpolicy ghcr.io/tedohayer/aerinite:lates
 
 From then on, every update is checked against the key before it's installed. Your system will only accept images built and signed by Aerinite's own build pipeline, so a tampered or substituted image is refused.
 
-### Installer ISO
-
-The **Build disk images** workflow (Actions tab, run manually) builds an installer ISO from the latest published image and attaches it to the run. The ISO is made with image-builder's `bootc-generic-iso`: `installer/Containerfile` defines the Aerinite-branded Anaconda installer environment, and the Aerinite image is embedded in the ISO, so installs work offline. The installer creates your user, then points the system at `ghcr.io/tedohayer/aerinite:latest` with signature enforcement. `just build-iso` builds the same ISO locally (needs sudo).
-
 ## Updating
 
-Updates are pulled from `ghcr.io/tedohayer/aerinite:latest` and checked against Aerinite's signing key. ublue's update service (`rpm-ostreed-automatic`) stages them automatically, daily by default (`ujust update-schedule` sets weekly or monthly); to update by hand, run `rpm-ostree upgrade` (no sudo needed; `--preview` shows the package changes first) or `sudo bootc upgrade`, then reboot. Notifications say when an update is ready or the running build is over a month old (`ujust toggle-update-notifications` turns them off). CI rebuilds whenever `base-main` changes, every Sunday (to pick up niri, Noctalia and greeter updates), and on every push to `main`.
+Updates download in the background, are checked against Aerinite's signing key and take effect when you reboot. You have these ujust commands to control them:
+
+- `ujust update`: update the system, Flatpaks and containers now
+- `ujust update-schedule`: update daily, weekly or monthly
+- `ujust toggle-updates`: turn automatic updates on or off
+- `ujust toggle-update-notifications`: turn the "Update ready" notifications on or off
+- `ujust update-firmware`: update device firmware
 
 ### Versions and tags
 
-Versions follow Universal Blue's scheme. Each build gets:
-
-| Tag | Example | Use |
-|---|---|---|
-| `latest` | | Newest build; what installs follow by default |
-| Fedora major | `45` | Newest build on that Fedora release; pin to it to choose when to move to the next one |
-| Build | `45-20261015`, `45-20261015.1` | One specific build: Fedora major, UTC date, and a counter for later builds that day. Never overwritten |
-| `beta` | | Newest build from the `beta` branch |
-| Beta build | `beta-45-20261010` | One specific beta build |
-
-The image's `org.opencontainers.image.version` label holds the dotted form (`45.20261015.1`). Every build also gets a [GitHub release](https://github.com/tedohayer/aerinite/releases) with the commits since the previous build and the base image it was built on.
-
-The Fedora release comes from `BASE_IMAGE` in the `Containerfile`; moving to the next one is a one-line change there.
-
-The beta channel is for testing larger changes before they reach `latest`, like the move to a new version of Fedora, and may break. Beta builds are published as prereleases. To try it, and to go back:
-
-```bash
-sudo bootc switch --enforce-container-sigpolicy ghcr.io/tedohayer/aerinite:beta
-sudo bootc switch --enforce-container-sigpolicy ghcr.io/tedohayer/aerinite:latest
-```
+Builds are tagged `latest`, their Fedora major (`45`) and date (`45-20261015`), or `beta` for testing builds; switch between them with `sudo bootc switch --enforce-container-sigpolicy ghcr.io/tedohayer/aerinite:<tag>`.
 
 ## Configuration
 
@@ -103,23 +90,6 @@ The image ships defaults; anything in your home directory overrides them.
 |---|---|---|
 | niri | `/etc/niri/config.kdl` (from `system_files/etc/niri/config.kdl`), used when you have no config of your own | `~/.config/niri/config.kdl` starting with `include "/etc/niri/config.kdl"`, followed by your changes |
 | Noctalia | `/usr/share/aerinite/noctalia.toml` (from `system_files/usr/share/aerinite/noctalia.toml`), linked into `~/.config/noctalia/00-image.toml` at login | `~/.config/noctalia/config.toml`. Changes made in Noctalia's settings window are saved to `~/.local/state/noctalia/settings.toml` |
-| Greeter | `/etc/noctalia-greeter/greeter.toml` | Edit that file |
-| GTK | Close button only, dark style (`zz0-aerinite.gschema.override`) | `gsettings set ...` |
-| zsh plugins | Installed, not loaded | Add to `~/.zshrc`: `source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh` and `source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh` (last) |
-
-The clock is 12-hour in the bar, the shell and the greeter. For 24-hour, put this in `~/.config/noctalia/config.toml`, and change `time_format` in `/etc/noctalia-greeter/greeter.toml` to `"{:%H:%M}"`:
-
-```toml
-[shell]
-time_format = "{:%H:%M}"
-
-[calendar]
-event_time_format = "%H:%M"
-
-[widget.clock]
-type = "clock"
-format = "{:%H:%M}"
-```
 
 To change the image itself, edit `build_files/build.sh` (packages and setup commands) or the config files under `system_files/` (laid out at their installed paths), and push to `main`.
 
