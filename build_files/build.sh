@@ -197,7 +197,10 @@ if grep -E '^(OSTREE_VERSION|IMAGE_VERSION)=' /tmp/initrd-release; then
 fi
 grep -q '^IMAGE_VERSION=' /usr/lib/os-release
 
-dnf5 list --installed kernel
-rpm -q waybar swaylock fuzzel || true
+# niri's recommends stay out (see the niri install above)
+if rpm -qa --qf '%{NAME}\n' | grep -Ex 'waybar|swaylock|fuzzel'; then
+	echo "niri's recommends are installed" >&2
+	exit 1
+fi
 
 dnf5 clean all
