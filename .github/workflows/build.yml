@@ -21,7 +21,7 @@ on:
   workflow_dispatch:
 
 env:
-  IMAGE_DESC: "aerinite: a minimal niri + Noctalia desktop on Universal Blue base-main"
+  IMAGE_DESC: "Aerinite: a minimal niri + Noctalia desktop on Universal Blue base-main"
   IMAGE_NAME: "${{ github.event.repository.name || 'aerinite' }}"  # output image name, usually same as repo name
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"  # do not edit
   # The beta branch publishes to its own channel: tag "beta" and beta-* build
@@ -171,12 +171,11 @@ jobs:
         with:
           fetch-depth: 0  # history and tags for release notes
 
-      # This is optional, but if you see that your builds are way too big for the runners, you can enable this by uncommenting the following lines:
       - name: Maximize build space
         uses: ublue-os/remove-unwanted-software@cc0becac701cf642c8f0a6613bbdaf5dc36b259e # v9
 
-      # Universal Blue style versions: tag 44-20261008, then 44-20261008.1, .2…
-      # for later builds that day; the version label uses dots (44.20261008.1).
+      # Universal Blue style versions: tag 45-20261008, then 45-20261008.1, .2…
+      # for later builds that day; the version label uses dots (45.20261008.1).
       # Beta build tags carry a prefix (beta-45-20261010) so they never collide.
       - name: Compute version
         id: version
