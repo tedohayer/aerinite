@@ -6,5 +6,5 @@ _build-*/**
 # Local test output of the check-base workflow step
 base.json
 
-# Local user for just build-qcow2/raw
+# Local user for just build-qcow2
 disk_config/user.toml
