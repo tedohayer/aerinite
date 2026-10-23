@@ -2,7 +2,7 @@
 # Based on osbuild's documented Fedora example:
 # https://github.com/osbuild/image-builder/blob/main/doc/20-advanced/20-bootc/10-isos.md
 # Build from the repo root:  podman build -f installer/Containerfile .
-ARG FEDORA_MAJOR=44
+ARG FEDORA_MAJOR=45
 FROM quay.io/fedora/fedora-bootc:${FEDORA_MAJOR}
 
 RUN dnf install -qy \
