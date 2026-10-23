@@ -75,10 +75,12 @@ semanage fcontext -a -e /var/lib/greetd /var/lib/noctalia-greeter
 
 # Rebrand os-release (boot menu entries, installer, hostname) as aerinite.
 # ID stays "fedora" so dnf, the bootloader tooling and anything checking for
-# Fedora keep working; AERINITE_VERSION is passed in by CI.
+# Fedora keep working; AERINITE_VERSION is passed in by CI. base-main's
+# OSTREE_VERSION is its own build, so replace it with ours.
 VERSION="${AERINITE_VERSION:-local}"
 sed -i \
     -e "s|^NAME=.*|NAME=\"Aerinite\"|" \
+    -e "s|^OSTREE_VERSION=.*|OSTREE_VERSION='${VERSION}'|" \
     -e "s|^PRETTY_NAME=.*|PRETTY_NAME=\"Aerinite ${VERSION}\"|" \
     -e "s|^VERSION=.*|VERSION=\"${VERSION} (Fedora $(rpm -E %fedora) / Universal Blue base-main)\"|" \
     -e "s|^VARIANT_ID=.*|VARIANT_ID=aerinite|" \
