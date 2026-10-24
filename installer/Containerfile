@@ -29,8 +29,13 @@ RUN mkdir -p /boot/efi && cp -ra /usr/lib/efi/*/*/EFI /boot/efi
 COPY installer/iso.yaml /usr/lib/image-builder/bootc/iso.yaml
 
 # Install the Aerinite image (embedded in the ISO), then point updates at the
-# signed registry image
+# signed registry image. IMAGE_TAG is the payload's tag (latest or beta): the
+# kickstart's source must match it, and the installed system follows it.
+ARG IMAGE_TAG=latest
 COPY installer/interactive-defaults.ks /usr/share/anaconda/interactive-defaults.ks
+RUN sed -i "s|ghcr.io/tedohayer/aerinite:latest|ghcr.io/tedohayer/aerinite:${IMAGE_TAG}|g" \
+        /usr/share/anaconda/interactive-defaults.ks && \
+    grep 'tedohayer/aerinite:' /usr/share/anaconda/interactive-defaults.ks
 
 # Branding: installer name from os-release (ID stays fedora so Anaconda's
 # Fedora profile still applies) and the Aerinite artwork in place of

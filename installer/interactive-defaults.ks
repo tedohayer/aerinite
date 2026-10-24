@@ -1,5 +1,6 @@
 # Aerinite installer defaults. The Aerinite image is embedded in the ISO
 # (image-builder --bootc-installer-payload-ref), so installs work offline.
+# installer/Containerfile replaces :latest with the payload's tag.
 bootc --source-imgref containers-storage:ghcr.io/tedohayer/aerinite:latest --target-imgref ghcr.io/tedohayer/aerinite:latest
 
 # Fedora's default btrfs layout adds a separate "home" subvolume mounted over

@@ -190,7 +190,9 @@ build-iso payload=("ghcr.io/tedohayer/" + image_name + ":" + default_tag):
     sudo podman pull "{{ payload }}"
     # Installer on the payload's Fedora release (beta payloads are newer)
     MAJOR=$(sudo podman run --rm "{{ payload }}" rpm -E %fedora)
+    payload="{{ payload }}"
     sudo podman build --pull=newer --build-arg FEDORA_MAJOR="${MAJOR}" \
+        --build-arg IMAGE_TAG="${payload##*:}" \
         -f installer/Containerfile -t localhost/aerinite-installer:latest .
     mkdir -p output
     sudo podman run --rm --privileged --pull=newer \

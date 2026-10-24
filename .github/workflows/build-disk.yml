@@ -11,7 +11,8 @@ on:
 env:
   IMAGE_NAME: ${{ github.event.repository.name }} # output of build.yml, keep in sync
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"  # do not edit
-  DEFAULT_TAG: "latest"
+  # Run on the beta branch, it builds the ISO from :beta (as in build.yml)
+  DEFAULT_TAG: ${{ github.ref_name == 'beta' && 'beta' || 'latest' }}
   IMAGE_BUILDER: "ghcr.io/osbuild/image-builder-cli:latest"
 
 concurrency:
@@ -56,6 +57,7 @@ jobs:
         run: |
           sudo podman build --pull=newer \
             --build-arg FEDORA_MAJOR="${{ steps.payload.outputs.fedora_major }}" \
+            --build-arg IMAGE_TAG="${DEFAULT_TAG}" \
             -f installer/Containerfile -t localhost/aerinite-installer:latest .
 
       - name: Build the ISO

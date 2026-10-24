@@ -53,7 +53,7 @@ Config belongs in `system_files/`, not in heredocs inside `build.sh`.
 - Pushes that touch only docs, `assets/`, `installer/`, `disk_config/`, the `Justfile`
   or `build-disk.yml` don't build. Neither does a push whose tree is unchanged; use
   `gh workflow run build.yml`.
-- `build-disk.yml` is manual and builds the ISO from the published `:latest`, so
+- `build-disk.yml` is manual and builds the ISO from the published `:latest` (`:beta` when run on `beta`), so
   publish the image first, then build the ISO.
 - Pin actions by commit SHA.
 
