@@ -1,0 +1,25 @@
+# Noctalia Greeter's first Synced colors: the dark Aerinite palette, from
+# noctalia-palette.json (keep them in step). tmpfiles copies this to
+# /var/lib/noctalia-greeter/sync.toml only if it's missing, so the first
+# `noctalia msg greeter-sync` replaces it.
+
+[appearance]
+theme_mode = "dark"
+
+[appearance.palette]
+primary = "#77b2df"
+on_primary = "#2d333b"
+secondary = "#9acadf"
+on_secondary = "#2d333b"
+tertiary = "#007bd8"
+on_tertiary = "#eceff4"
+error = "#bf616a"
+on_error = "#2d333b"
+surface = "#2d333b"
+on_surface = "#eceff4"
+surface_variant = "#39414c"
+on_surface_variant = "#d8dee9"
+outline = "#4e5a6a"
+shadow = "#2d333b"
+hover = "#007bd8"
+on_hover = "#eceff4"

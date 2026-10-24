@@ -8,6 +8,12 @@ time_format = "{:%I:%M %p}"
 # Show password prompts for system actions (no other polkit agent runs under niri)
 polkit_agent = true
 
+# Aerinite palette (~/.config/noctalia/palettes/Aerinite.json, linked from
+# /usr/share/aerinite/noctalia-palette.json): Nord in the brand blue
+[theme]
+source = "custom"
+custom_palette = "Aerinite"
+
 [calendar]
 event_time_format = "%I:%M %p"
 

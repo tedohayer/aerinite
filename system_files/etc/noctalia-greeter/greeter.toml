@@ -1,5 +1,6 @@
 # Noctalia Greeter defaults: preselect niri, password login (it unlocks the
-# keyring), 12h clock, colors synced from Noctalia.
+# keyring), 12h clock, colors synced from Noctalia (Aerinite until the first
+# sync, see /usr/share/aerinite/greeter-sync.toml).
 
 [session]
 default = "Niri"
