@@ -12,6 +12,20 @@ RUN dnf install -qy \
         dracut-config-generic \
         dracut-network \
         net-tools \
+        NetworkManager-wifi \
+        atheros-firmware \
+        atmel-firmware \
+        brcmfmac-firmware \
+        iwlegacy-firmware \
+        iwlwifi-dvm-firmware \
+        iwlwifi-mld-firmware \
+        iwlwifi-mvm-firmware \
+        libertas-firmware \
+        mediatek-firmware \
+        mt7xxx-firmware \
+        nxpwireless-firmware \
+        realtek-firmware \
+        tiwilink-firmware \
         grub2-efi-x64-cdboot \
         plymouth \
         plymouth-plugin-two-step \
