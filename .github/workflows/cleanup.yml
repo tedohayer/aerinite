@@ -1,0 +1,58 @@
+---
+name: Clean up old images
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'List what would be deleted without deleting it'
+        type: boolean
+        default: true
+
+env:
+  KEEP_DAYS: 90
+  PACKAGE: "${{ github.event.repository.name || 'aerinite' }}"
+  DRY_RUN: ${{ inputs.dry_run || 'false' }}
+
+concurrency:
+  group: ${{ github.workflow }}
+
+jobs:
+  cleanup:
+    name: Delete build tags older than 90 days
+    runs-on: ubuntu-24.04
+    permissions:
+      packages: write
+    steps:
+      # Deletes a version only if every tag on it is a build tag
+      # (45-20261027, beta-45-20261024.1) or it has none, so whatever latest,
+      # 45, 44 and beta point at always stays. Signatures go with their image.
+      - name: Delete old versions
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          API="/users/${GITHUB_REPOSITORY_OWNER}/packages/container/${PACKAGE}/versions"
+          gh api --paginate "${API}?per_page=100" --jq '.[]' | jq -s . > versions.json
+          CUTOFF=$(date -u -d "-${KEEP_DAYS} days" +%s)
+          jq -r --argjson cutoff "${CUTOFF}" '
+            def tags: .metadata.container.tags;
+            def build: test("^(beta-)?[0-9]+-[0-9]{8}(\\.[0-9]+)?$");
+            def sig: test("^sha256-[0-9a-f]{64}\\.sig$");
+            def old: (.created_at | fromdateiso8601) < $cutoff;
+            map(select(tags | (length > 0 and all(sig)) | not)) as $images
+            | ($images | map(select(old and (tags | all(build))))) as $doomed
+            | (($images - $doomed) | map(.name)) as $kept
+            | $doomed[],
+              (.[] | select(old and (tags | length > 0 and all(sig)))
+                   | select((tags[0] | "sha256:" + .[7:71]) as $d
+                            | any($kept[]; . == $d) | not))
+            | "\(.id) \(.name) \(tags | join(","))"
+          ' versions.json > doomed.txt
+
+          echo "$(jq length versions.json) versions, $(wc -l < doomed.txt) older than ${KEEP_DAYS} days to delete"
+          while read -r ID NAME TAGS; do
+            echo "Deleting ${NAME} ${TAGS:-(untagged)}"
+            [ "${DRY_RUN}" = true ] || gh api -X DELETE "${API}/${ID}"
+          done < doomed.txt

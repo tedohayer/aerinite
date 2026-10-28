@@ -55,6 +55,8 @@ Config belongs in `system_files/`, not in heredocs inside `build.sh`.
   `gh workflow run build.yml`.
 - `build-disk.yml` is manual and builds the ISO from the published `:latest` (`:beta` when run on `beta`), so
   publish the image first, then build the ISO.
+- `cleanup.yml` runs weekly and deletes image versions older than 90 days whose only
+  tags are build tags (or none), plus their signatures. Manual runs default to a dry run.
 - Pin actions by commit SHA.
 
 ## Update notifications
