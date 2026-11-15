@@ -8,8 +8,7 @@ A minimal [bootc](https://github.com/bootc-dev/bootc) desktop image: the [niri](
 
 ## Status
 
-Aerinite is in beta and built to be a minimalist OS for my personal laptop
-(Framework 13).
+Aerinite is stable and my daily driver. Limited commits to this repo is a sign that things are working smoothly, not abandonment.
 
 ## Philosophy
 
